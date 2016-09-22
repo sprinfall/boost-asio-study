@@ -8,7 +8,7 @@ using boost::asio::ip::udp;
 
 // A synchronous UDP daytime server.
 
-std::string make_daytime_string() {
+std::string Now() {
   std::time_t now = std::time(0);
   return std::ctime(&now);
 }
@@ -34,7 +34,7 @@ int main() {
       break;
     }
 
-    std::string msg = make_daytime_string();
+    std::string msg = Now();
 
     // Send the message to the remote endpoint.
     boost::system::error_code ignored_error;

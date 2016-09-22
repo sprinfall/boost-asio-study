@@ -23,14 +23,14 @@ int main(int argc, char* argv[]) {
   //udp::resolver::query query(udp::v4(), argv[1], "daytime");
   udp::resolver::query query(udp::v4(), "localhost", "daytime");
 
-  udp::endpoint reveiver_endpoint = *resolver.resolve(query);
+  udp::endpoint receiver_endpoint = *resolver.resolve(query);
 
   // Since UDP is datagram-oriented, we will not use a stream socket.
   // Create a udp::socket and initiate contact with the remote endpoint.
   udp::socket socket(io_service);
   socket.open(udp::v4());
   boost::array<char, 1> send_buf = { { 0 } };
-  socket.send_to(boost::asio::buffer(send_buf), reveiver_endpoint);
+  socket.send_to(boost::asio::buffer(send_buf), receiver_endpoint);
 
   // Be ready to accept the server response.
   boost::array<char, 128> recv_buf;

@@ -7,7 +7,7 @@ using boost::asio::ip::tcp;
 
 // A synchronous TCP daytime server.
 
-std::string make_daytime_string() {
+std::string Now() {
   std::time_t now = std::time(0);
   return std::ctime(&now);
 }
@@ -26,11 +26,12 @@ int main() {
     acceptor.accept(socket);
 
     // A client is connected.
-    std::string msg = make_daytime_string();
     std::cout << "Client connected." << std::endl;
 
-    boost::system::error_code ignored_error;
-    boost::asio::write(socket, boost::asio::buffer(msg), ignored_error);
+    std::string msg = Now();
+
+    boost::system::error_code ic;
+    boost::asio::write(socket, boost::asio::buffer(msg), ic);
   }
 
   return 0;

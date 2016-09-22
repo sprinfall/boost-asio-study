@@ -11,10 +11,13 @@
 // 57594 16-07-25 05:56:02 50 0 0 610.1 UTC(NIST) *
 
 int main(int argc, char* argv[]) {
-  //if (argc != 2) {
-  //  std::cerr << "Usage: " << argv[0] << " <host>" << std::endl;
-  //  return 1;
-  //}
+  const char* host = NULL;
+  if (argc == 2) {
+    host = argv[1];
+  } else {
+    host = "time-a.nist.gov";  // or IP 129.6.15.28
+    std::cout << "Host not provided, use '" << host << "' by default." << std::endl;
+  }
 
   boost::asio::io_service io_service;
 
@@ -24,10 +27,7 @@ int main(int argc, char* argv[]) {
   tcp::resolver resolver(io_service);
 
   // Construct a query using the server name, and the service name.
-  //tcp::resolver::query query(argv[1], "daytime");
-  //tcp::resolver::query query("129.6.15.28", "daytime");
-  //tcp::resolver::query query("time-a.nist.gov", "daytime");
-  tcp::resolver::query query("localhost", "daytime");
+  tcp::resolver::query query(host, "daytime");
 
   // The list of endpoints is returned using an iterator.
   tcp::resolver::iterator endpoint_it = resolver.resolve(query);
@@ -35,22 +35,22 @@ int main(int argc, char* argv[]) {
   // Create and connect the socket.
   tcp::socket socket(io_service);
 
-  // socket.connet(endpoint, error)
-  //boost::asio::connect(socket, endpoint_it);  // Exception will be thrown on error.
-  boost::system::error_code error;
-  boost::asio::connect(socket, endpoint_it, error);  // No exception will be thrown.
-  if (error) {
+  // With an error code parameter, no exception will be thrown.
+  boost::system::error_code ec;
+  boost::asio::connect(socket, endpoint_it, ec);
+  if (ec) {
     return 1;
   }
 
-  while (true) {
-    boost::array<char, 128> buf;  // TODO: Move outside of while.
-    boost::system::error_code error;
-    size_t len = socket.read_some(boost::asio::buffer(buf), error);
+  boost::array<char, 128> buf;
 
-    if (error == boost::asio::error::eof) {
+  while (true) {
+    boost::system::error_code ec;
+    size_t len = socket.read_some(boost::asio::buffer(buf), ec);
+
+    if (ec == boost::asio::error::eof) {
       break;  // Connection closed cleanly by peer.
-    } else if (error) {
+    } else if (ec) {
       break;  // Some other error.
     }
 

@@ -5,40 +5,45 @@
 
 using boost::asio::ip::tcp;
 
-class tcp_client {
+class TcpClient {
 public:
-  tcp_client(boost::asio::io_service& io_service, const std::string& host)
-    : socket_(io_service) {
-    start_connect(host);
+  TcpClient(boost::asio::io_service& io_service, const std::string& host)
+      : socket_(io_service) {
+    StartConnect(host);
   }
 
 private:
-  void start_connect(const std::string& host) {
-    // TODO
+  void StartConnect(const std::string& host) {
     tcp::resolver resolver(socket_.get_io_service());
     tcp::resolver::query query(host, "daytime");
 
-    resolver.async_resolve(query, boost::bind(&tcp_client::handle_resolver, this,
-      boost::asio::placeholders::error,
-      boost::asio::placeholders::iterator));
-  }
-
-  void handle_resolver(const boost::system::error_code& error, tcp::resolver::iterator it) {
-    if (!error) {
-      boost::asio::async_connect(socket_, it,
-                                 boost::bind(&tcp_client::handle_connect, this,
-                                 boost::asio::placeholders::error,
-                                 boost::asio::placeholders::iterator));
+    boost::system::error_code ec;
+    tcp::resolver::iterator it = resolver.resolve(query, ec);
+    if (!ec) {
+      socket_.async_connect(*it,
+                            boost::bind(&TcpClient::ConnectHandler,
+                                        this,
+                                        boost::asio::placeholders::error));
     }
   }
 
-  void handle_connect(const boost::system::error_code& error, tcp::resolver::iterator it) {
-    if (error) {
+  //void ResolverHandler(const boost::system::error_code& ec, tcp::resolver::iterator it) {
+  //  if (!ec) {
+  //    boost::asio::async_connect(socket_,
+  //                               it,
+  //                               boost::bind(&TcpClient::ConnectHandler, this,
+  //                               boost::asio::placeholders::error));
+  //  }
+  //}
+
+  void ConnectHandler(const boost::system::error_code& ec) {
+    if (ec) {
       return;
     }
 
+    boost::array<char, 128> buf;
+
     while (true) {
-      boost::array<char, 128> buf;
       boost::system::error_code error;
       size_t len = socket_.read_some(boost::asio::buffer(buf), error);
 
@@ -57,8 +62,17 @@ private:
 };
 
 int main(int argc, char* argv[]) {
+  const char* host = NULL;
+  if (argc == 2) {
+    host = argv[1];
+  } else {
+    host = "time-a.nist.gov";  // or IP 129.6.15.28
+    std::cout << "Host not provided, use '" << host << "' by default." << std::endl;
+  }
+
   boost::asio::io_service io_service;
-  tcp_client client(io_service, "localhost");
+  TcpClient client(io_service, host);
+
   io_service.run();
 
   return 0;

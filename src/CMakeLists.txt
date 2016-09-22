@@ -17,3 +17,10 @@ add_executable(daytime_udp_server1 daytime_udp_server1.cpp)
 add_executable(daytime_udp_server2 daytime_udp_server2.cpp)
 
 add_executable(alloc_server alloc_server.cpp)
+
+add_executable(thread_pool thread_pool.cpp)
+
+add_executable(web_client web_client.cpp)
+
+add_executable(uv_hello uv_hello.cpp)
+add_executable(uv_idle_basic uv_idle_basic.cpp)

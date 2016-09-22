@@ -1,27 +1,26 @@
 #include <iostream>
 #include <boost/array.hpp>
+#include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
 // An asynchronous TCP daytime server.
 
-static std::string make_daytime_string() {
-  std::time_t now = std::time(0);
+std::string Now() {
+  std::time_t now = std::time(NULL);
   return std::ctime(&now);
 }
 
 // NOTE: enable_shared_from_this has been a part of C++11.
-class tcp_connection :
-  public boost::enable_shared_from_this<tcp_connection> {
+class TcpConnection : public boost::enable_shared_from_this<TcpConnection> {
 public:
-  typedef boost::shared_ptr<tcp_connection> pointer;
+  typedef boost::shared_ptr<TcpConnection> Pointer;
 
-  static pointer create(boost::asio::io_service& io_service) {
-    return pointer(new tcp_connection(io_service));
+  static Pointer Create(boost::asio::io_service& io_service) {
+    return Pointer(new TcpConnection(io_service));
   }
 
   tcp::socket& socket() {
@@ -29,26 +28,24 @@ public:
   }
 
   // Serve the data to the client.
-  void start() {
-    msg_ = make_daytime_string();
+  void Start() {
+    msg_ = Now();
 
-    boost::asio::async_write(socket_, boost::asio::buffer(msg_),
-                             boost::bind(&tcp_connection::handle_write,
+    boost::asio::async_write(socket_,
+                             boost::asio::buffer(msg_),
+                             boost::bind(&TcpConnection::WriteHandler,
                                          shared_from_this(),
                                          boost::asio::placeholders::error,
                                          boost::asio::placeholders::bytes_transferred));
-
-    //boost::asio::async_write(socket_, boost::asio::buffer(msg_),
-    //                         boost::bind(&tcp_connection::handle_write, shared_from_this()));
   }
 
 private:
-  tcp_connection(boost::asio::io_service& io_service)
-    : socket_(io_service) {
+  explicit TcpConnection(boost::asio::io_service& io_service)
+      : socket_(io_service) {
   }
 
   // If parameters are not needed, it is possible to remove them from the function.
-  void handle_write(const boost::system::error_code& error, size_t bytes_transferred) {
+  void WriteHandler(const boost::system::error_code& ec, size_t bytes_transferred) {
   }
 
 private:
@@ -59,35 +56,35 @@ private:
   std::string msg_;
 };
 
-class tcp_server {
+class TcpServer {
 public:
-  tcp_server(boost::asio::io_service& io_service)
-    // An acceptor listening on TCP port 13.
-    : acceptor_(io_service, tcp::endpoint(tcp::v4(), 13)) {
-    start_accept();
+  TcpServer(boost::asio::io_service& io_service)
+      // An acceptor listening on TCP port 13.
+      : acceptor_(io_service, tcp::endpoint(tcp::v4(), 13)) {
+    StartAccept();
   }
 
 private:
   // Create a socket and initiates an asynchronous accept operation to wait
   // for a new connection.
-  void start_accept() {
-    std::cout << "tcp_server::start_accept" << std::endl;
+  void StartAccept() {
+    std::cout << "TcpServer::StartAccept" << std::endl;
 
-    tcp_connection::pointer new_connection =
-      tcp_connection::create(acceptor_.get_io_service());
+    TcpConnection::Pointer connection = TcpConnection::Create(acceptor_.get_io_service());
 
-    acceptor_.async_accept(new_connection->socket(),
-                           boost::bind(&tcp_server::handle_accept, this, new_connection, boost::asio::placeholders::error));
+    acceptor_.async_accept(connection->socket(),
+                           boost::bind(&TcpServer::AcceptHandler,
+                                       this,
+                                       connection,
+                                       boost::asio::placeholders::error));
   }
 
-  void handle_accept(tcp_connection::pointer new_connection, const boost::system::error_code& error) {
-    std::cout << "tcp_server::handle_accept" << std::endl;
-
-    if (!error) {
-      new_connection->start();
+  void AcceptHandler(TcpConnection::Pointer connection, const boost::system::error_code& ec) {
+    if (!ec) {
+      connection->Start();
     }
 
-    start_accept();
+    StartAccept();
   }
 
 private:
@@ -97,7 +94,7 @@ private:
 
 int main(int argc, char* argv[]) {
   boost::asio::io_service io_service;
-  tcp_server server(io_service);
+  TcpServer server(io_service);
   io_service.run();
 
   return 0;
