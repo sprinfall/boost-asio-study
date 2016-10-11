@@ -17,6 +17,7 @@ add_executable(daytime_udp_server1 daytime_udp_server1.cpp)
 add_executable(daytime_udp_server2 daytime_udp_server2.cpp)
 
 add_executable(alloc_server alloc_server.cpp)
+add_executable(alloc_client alloc_client.cpp)
 
 add_executable(thread_pool thread_pool.cpp)
 

@@ -1,10 +1,14 @@
 #include <iostream>
+
+// For VS2013 with Boost 1.61
+// Boost 1.58 doesn't need this for VS2013.
+#define BOOST_NO_CXX11_TEMPLATE_ALIASES
+
 #include <boost/asio.hpp>
-#include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread.hpp>
 
-// strand: ÂÆ, ¹É
 // The stand class provides the ability to post and dispatch handlers with the
 // guarantee that none of those handlers will execute concurrently.
 
