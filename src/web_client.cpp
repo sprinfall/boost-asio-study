@@ -10,58 +10,22 @@
 // http://theboostcpplibraries.com/boost.asio-network-programming
 // Example 32.5. A web client with boost::asio::ip::tcp::socket
 
-namespace asio = boost::asio;
 using boost::asio::ip::tcp;
-using boost::system::error_code;
-
-#if 0
-
-boost::asio::io_service io_service;
-asio::ip::tcp::socket tcp_socket(io_service);
-std::array<char, 4096> bytes;
-
-void read_handler(const error_code& ec, std::size_t bytes_transferred) {
-  if (!ec) {
-    std::cout.write(bytes.data(), bytes_transferred);
-    tcp_socket.async_read_some(asio::buffer(bytes), read_handler);
-  }
-}
-
-void connect_handler(const error_code& ec) {
-  if (!ec) {
-    std::string r = "GET / HTTP/1.1\r\nHost: theboostcpplibraries.com\r\n\r\n";
-    write(tcp_socket, asio::buffer(r));
-    tcp_socket.async_read_some(asio::buffer(bytes), read_handler);
-  }
-}
-
-void resolve_handler(const error_code& ec, tcp::resolver::iterator it) {
-  if (!ec)
-    tcp_socket.async_connect(*it, connect_handler);
-}
-
-int main() {
-  tcp::resolver resolver(io_service);
-  tcp::resolver::query q("theboostcpplibraries.com", "80");
-  resolver.async_resolve(q, resolve_handler);
-
-  io_service.run();
-}
-
-#else
 
 #define ASYNC_RESOLVE 1
 
 class WebClient {
 public:
-  WebClient(asio::io_service& io_service)
+  WebClient(boost::asio::io_service& io_service)
       : socket_(io_service) {
     StartConnect();
   }
 
   ~WebClient() {
+#if ASYNC_RESOLVE
     delete resolver_;
     delete query_;
+#endif  // ASYNC_RESOLVE
   }
 
 private:
@@ -75,64 +39,71 @@ private:
     // That means the resolver object goes out of scope.
     // See http://stackoverflow.com/questions/4636608/boostasioasync-resolve-problem
 
-    resolver_->async_resolve(
-      *query_,
-      boost::bind(&WebClient::ResolverHandler,
-      this,
-      asio::placeholders::error,
-      asio::placeholders::iterator));
-
-    delete resolver_;
+    auto handler = boost::bind(&WebClient::HandleResolve,
+                               this,
+                               boost::asio::placeholders::error,
+                               boost::asio::placeholders::iterator);
+    resolver_->async_resolve(*query_, handler);
 #else
     tcp::resolver resolver(socket_.get_io_service());
     tcp::resolver::query query("theboostcpplibraries.com", "80");
 
-    error_code ec;
+    boost::system::error_code ec;
     tcp::resolver::iterator it = resolver.resolve(query, ec);
 
     if (!ec) {
-      socket_.async_connect(*it,
-                            boost::bind(&WebClient::ConnectHandler, this, asio::placeholders::error));
+      auto handler = boost::bind(&WebClient::HandleConnect,
+                                 this,
+                                 boost::asio::placeholders::error);
+      socket_.async_connect(*it, handler);
     }
 #endif  // ASYNC_RESOLVE
   }
 
 #if ASYNC_RESOLVE
-  void ResolverHandler(const error_code& ec, tcp::resolver::iterator it) {
+  void HandleResolve(const boost::system::error_code& ec, tcp::resolver::iterator it) {
     if (!ec) {
-      socket_.async_connect(*it,
-                            boost::bind(&WebClient::ConnectHandler, this, asio::placeholders::error));
+      auto handler = boost::bind(&WebClient::HandleConnect,
+                                 this,
+                                 boost::asio::placeholders::error);
+      socket_.async_connect(*it, handler);
     } else {
       std::cerr << ec.message() << std::endl;
     }
   }
 #endif  // ASYNC_RESOLVE
 
-  void ConnectHandler(const error_code& ec) {
+  void HandleConnect(const boost::system::error_code& ec) {
     if (!ec) {
       std::string r = "GET / HTTP/1.1\r\nHost: theboostcpplibraries.com\r\n\r\n";
-      write(socket_, asio::buffer(r));
-      socket_.async_read_some(asio::buffer(bytes_),
-                              boost::bind(&WebClient::ReadHandler, this,
-                              asio::placeholders::error,
-                              asio::placeholders::bytes_transferred));
+      write(socket_, boost::asio::buffer(r));
+
+      auto handler = boost::bind(&WebClient::HandleRead,
+                                 this,
+                                 boost::asio::placeholders::error,
+                                 boost::asio::placeholders::bytes_transferred);
+      socket_.async_read_some(boost::asio::buffer(bytes_), handler);
     }
   }
 
-  void ReadHandler(const error_code& ec, std::size_t bytes_transferred) {
+  void HandleRead(const boost::system::error_code& ec, std::size_t bytes_transferred) {
     if (!ec) {
       std::cout.write(bytes_.data(), bytes_transferred);
 
-      socket_.async_read_some(asio::buffer(bytes_),
-                              boost::bind(&WebClient::ReadHandler, this,
-                              asio::placeholders::error,
-                              asio::placeholders::bytes_transferred));
+      auto handler = boost::bind(&WebClient::HandleRead,
+                                 this,
+                                 boost::asio::placeholders::error,
+                                 boost::asio::placeholders::bytes_transferred);
+      socket_.async_read_some(boost::asio::buffer(bytes_), handler);
     }
   }
 
 private:
+#if ASYNC_RESOLVE
   tcp::resolver* resolver_;
   tcp::resolver::query* query_;
+#endif  // ASYNC_RESOLVE
+
   tcp::socket socket_;
   std::array<char, 4096> bytes_;
 };
@@ -144,5 +115,3 @@ int main() {
 
   return 0;
 }
-
-#endif

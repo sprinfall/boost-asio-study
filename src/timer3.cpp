@@ -6,7 +6,7 @@
 // Use a timer asynchronously.
 // Bind arguments to a callback function.
 
-void Print(const boost::system::error_code&,
+void Print(const boost::system::error_code& ec,
            boost::asio::deadline_timer* timer,
            int* count) {
   if (*count < 3) {

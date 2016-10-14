@@ -35,8 +35,7 @@ int main(int argc, char* argv[]) {
   // Be ready to accept the server response.
   boost::array<char, 128> recv_buf;
   udp::endpoint sender_endpoint;
-  size_t len = socket.receive_from(
-    boost::asio::buffer(recv_buf), sender_endpoint);
+  size_t len = socket.receive_from(boost::asio::buffer(recv_buf), sender_endpoint);
  
   std::cout.write(recv_buf.data(), len);
 

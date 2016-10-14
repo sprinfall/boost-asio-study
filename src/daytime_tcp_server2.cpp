@@ -14,7 +14,6 @@ std::string Now() {
   return std::ctime(&now);
 }
 
-// NOTE: enable_shared_from_this has been a part of C++11.
 class TcpConnection : public boost::enable_shared_from_this<TcpConnection> {
 public:
   typedef boost::shared_ptr<TcpConnection> Pointer;
@@ -31,12 +30,11 @@ public:
   void Start() {
     msg_ = Now();
 
-    boost::asio::async_write(socket_,
-                             boost::asio::buffer(msg_),
-                             boost::bind(&TcpConnection::WriteHandler,
-                                         shared_from_this(),
-                                         boost::asio::placeholders::error,
-                                         boost::asio::placeholders::bytes_transferred));
+    auto handler = boost::bind(&TcpConnection::WriteHandler,
+                               shared_from_this(),
+                               boost::asio::placeholders::error,
+                               boost::asio::placeholders::bytes_transferred);
+    boost::asio::async_write(socket_, boost::asio::buffer(msg_), handler);
   }
 
 private:
@@ -68,18 +66,19 @@ private:
   // Create a socket and initiates an asynchronous accept operation to wait
   // for a new connection.
   void StartAccept() {
-    std::cout << "TcpServer::StartAccept" << std::endl;
+    std::cout << "Start accept" << std::endl;
 
     TcpConnection::Pointer connection = TcpConnection::Create(acceptor_.get_io_service());
 
-    acceptor_.async_accept(connection->socket(),
-                           boost::bind(&TcpServer::AcceptHandler,
-                                       this,
-                                       connection,
-                                       boost::asio::placeholders::error));
+    auto handler = boost::bind(&TcpServer::HandleAccept,
+                               this,
+                               connection,
+                               boost::asio::placeholders::error);
+    acceptor_.async_accept(connection->socket(), handler);
   }
 
-  void AcceptHandler(TcpConnection::Pointer connection, const boost::system::error_code& ec) {
+  void HandleAccept(TcpConnection::Pointer connection,
+                    const boost::system::error_code& ec) {
     if (!ec) {
       connection->Start();
     }

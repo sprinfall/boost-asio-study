@@ -30,8 +30,8 @@ int main() {
 
     std::string msg = Now();
 
-    boost::system::error_code ic;
-    boost::asio::write(socket, boost::asio::buffer(msg), ic);
+    boost::system::error_code ec;
+    boost::asio::write(socket, boost::asio::buffer(msg), ec);
   }
 
   return 0;

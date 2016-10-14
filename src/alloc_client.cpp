@@ -22,7 +22,7 @@ public:
     tcp::resolver::iterator it = resolver.resolve(query, ec);
 
     if (!ec) {
-      auto handler = boost::bind(&Client::ConnectHandler,
+      auto handler = boost::bind(&Client::HandleConnect,
                                  this,
                                  boost::asio::placeholders::error);
       socket_.async_connect(*it, handler);
@@ -30,7 +30,7 @@ public:
   }
 
 private:
-  void ConnectHandler(const boost::system::error_code& ec) {
+  void HandleConnect(const boost::system::error_code& ec) {
     if (ec) {
       std::cerr << ec << std::endl;
       return;

@@ -1,9 +1,4 @@
 #include <iostream>
-
-// For VS2013 with Boost 1.61
-// Boost 1.58 doesn't need this for VS2013.
-#define BOOST_NO_CXX11_TEMPLATE_ALIASES
-
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>

@@ -109,20 +109,20 @@ public:
     DoRead();
   }
 
-  void ReadHandler(const boost::system::error_code& ec, size_t bytes_transferred) {
+  void HandleRead(const boost::system::error_code& ec, size_t bytes_transferred) {
     if (!ec) {
       DoWrite(bytes_transferred);
     }
   }
 
-  void WriteHandler(const boost::system::error_code& ec) {
+  void HandleWrite(const boost::system::error_code& ec) {
     if (!ec) {
       DoRead();
     }
   }
 
   void DoRead() {
-    auto handler = boost::bind(&Connection::ReadHandler,
+    auto handler = boost::bind(&Connection::HandleRead,
                                shared_from_this(),
                                boost::asio::placeholders::error,
                                boost::asio::placeholders::bytes_transferred);
@@ -132,7 +132,7 @@ public:
   }
 
   void DoWrite(size_t bytes_transferred) {
-    auto handler = boost::bind(&Connection::WriteHandler,
+    auto handler = boost::bind(&Connection::HandleWrite,
                                shared_from_this(),
                                boost::asio::placeholders::error);
 
@@ -169,14 +169,14 @@ private:
   void StartAccept() {
     Connection::Pointer connection(Connection::Create(io_service_));
 
-    auto handler = boost::bind(&Server::AcceptHandler,
+    auto handler = boost::bind(&Server::HandleAccept,
                                this,
                                connection,
                                boost::asio::placeholders::error);
     acceptor_.async_accept(connection->socket(), handler);
   }
 
-  void AcceptHandler(Connection::Pointer connection, const boost::system::error_code& ec) {
+  void HandleAccept(Connection::Pointer connection, const boost::system::error_code& ec) {
     if (!ec) {
       connection->Start();
     }

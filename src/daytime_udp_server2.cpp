@@ -35,14 +35,14 @@ private:
   }
 
   // Service the client request.
-  void ReceiveHandler(const boost::system::error_code& error,
+  void ReceiveHandler(const boost::system::error_code& ec,
                       size_t bytes_transferred) {
     // error::message_size means the client sent anything larger than the
     // 1-byte recv_buf_, ignore such an error.
-    if (!error || error == boost::asio::error::message_size) {
+    if (!ec || ec == boost::asio::error::message_size) {
       boost::shared_ptr<std::string> msg(new std::string(Now()));
 
-      auto handler = boost::bind(&UdpServer::SendHandler,
+      auto handler = boost::bind(&UdpServer::HandleSend,
                                  this,
                                  msg,
                                  boost::asio::placeholders::error,
@@ -59,9 +59,9 @@ private:
 
   // The first argument makes sure the message won't be destroyed until the
   // send is done.
-  void SendHandler(boost::shared_ptr<std::string> msg,
-                   const boost::system::error_code& error,
-                   size_t bytes_transferred) {
+  void HandleSend(boost::shared_ptr<std::string> msg,
+                  const boost::system::error_code& ec,
+                  size_t bytes_transferred) {
   }
 
 private:

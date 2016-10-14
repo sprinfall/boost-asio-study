@@ -23,5 +23,8 @@ add_executable(thread_pool thread_pool.cpp)
 
 add_executable(web_client web_client.cpp)
 
+file(GLOB HTTP_SERVER_SRCS http/server/*.cpp http/server/*.hpp)
+add_executable(http_server ${HTTP_SERVER_SRCS})
+
 add_executable(uv_hello uv_hello.cpp)
 add_executable(uv_idle_basic uv_idle_basic.cpp)

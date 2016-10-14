@@ -1,16 +1,11 @@
 #include <iostream>
-
-// For VS2013 with Boost 1.61
-// Boost 1.58 doesn't need this for VS2013.
-#define BOOST_NO_CXX11_TEMPLATE_ALIASES
-
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 
 // Use a timer asynchronously.
 
-// Callback function to be called when the asynchronous wait finishes.
+// Handler to be called when the asynchronous wait finishes.
 void SayHello(const boost::system::error_code&) {
   std::cout << "Hello, world!" << std::endl;
 }
@@ -25,7 +20,7 @@ int main() {
   io_service.run();
 
   //size_t size = io_service.run();
-  //std::cout << "number of handlers executed: " << size << std::endl;  // 1
+  //std::cout << "Number of handlers executed: " << size << std::endl;  // 1
 
   // TODO: This won't print the "Hello, world!".
   //io_service.poll();

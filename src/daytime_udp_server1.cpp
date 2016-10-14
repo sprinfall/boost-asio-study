@@ -24,21 +24,21 @@ int main() {
     boost::array<char, 1> recv_buf;
     // The remote_endpoint will be populated by receive_from().
     udp::endpoint remote_endpoint;
-    boost::system::error_code error;
+    boost::system::error_code ec;
     socket.receive_from(boost::asio::buffer(recv_buf),
                         remote_endpoint,
                         0,
-                        error);
+                        ec);
 
-    if (error && error != boost::asio::error::message_size) {
+    if (ec && ec != boost::asio::error::message_size) {
       break;
     }
 
     std::string msg = Now();
 
     // Send the message to the remote endpoint.
-    boost::system::error_code ignored_error;
-    socket.send_to(boost::asio::buffer(msg), remote_endpoint, 0, ignored_error);
+    boost::system::error_code ignored_ec;
+    socket.send_to(boost::asio::buffer(msg), remote_endpoint, 0, ignored_ec);
   }
 
   return 0;

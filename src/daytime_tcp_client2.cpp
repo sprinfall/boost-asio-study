@@ -19,15 +19,16 @@ private:
 
     boost::system::error_code ec;
     tcp::resolver::iterator it = resolver.resolve(query, ec);
+
     if (!ec) {
-      socket_.async_connect(*it,
-                            boost::bind(&TcpClient::ConnectHandler,
-                                        this,
-                                        boost::asio::placeholders::error));
+      auto handler = boost::bind(&TcpClient::HandleConnect,
+                                 this,
+                                 boost::asio::placeholders::error);
+      socket_.async_connect(*it, handler);
     }
   }
 
-  //void ResolverHandler(const boost::system::error_code& ec, tcp::resolver::iterator it) {
+  //void HandleResolve(const boost::system::error_code& ec, tcp::resolver::iterator it) {
   //  if (!ec) {
   //    boost::asio::async_connect(socket_,
   //                               it,
@@ -36,7 +37,7 @@ private:
   //  }
   //}
 
-  void ConnectHandler(const boost::system::error_code& ec) {
+  void HandleConnect(const boost::system::error_code& ec) {
     if (ec) {
       return;
     }
@@ -44,12 +45,12 @@ private:
     boost::array<char, 128> buf;
 
     while (true) {
-      boost::system::error_code error;
-      size_t len = socket_.read_some(boost::asio::buffer(buf), error);
+      boost::system::error_code ec;
+      size_t len = socket_.read_some(boost::asio::buffer(buf), ec);
 
-      if (error == boost::asio::error::eof) {
+      if (ec == boost::asio::error::eof) {
         break;  // Connection closed cleanly by peer.
-      } else if (error) {
+      } else if (ec) {
         break;  // Some other error.
       }
 
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
   }
 
   boost::asio::io_service io_service;
-  TcpClient client(io_service, host);
+  TcpClient tcp_client(io_service, host);
 
   io_service.run();
 
