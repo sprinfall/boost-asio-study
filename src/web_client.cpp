@@ -32,7 +32,7 @@ private:
   void StartConnect() {
 #if ASYNC_RESOLVE
     resolver_ = new tcp::resolver(socket_.get_io_service());
-    query_ = new tcp::resolver::query("theboostcpplibraries.com", "80");
+    query_ = new tcp::resolver::query("theboostcpplibraries.om", "80");
 
     // If resolver or query is auto variable, the error code in ResolverHandler() will be:
     // The I/O operation has been aborted because of either a thread exit or an application request

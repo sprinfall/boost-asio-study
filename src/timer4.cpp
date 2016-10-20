@@ -3,40 +3,39 @@
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-// Use a member function as callback.
-// Exactly the same behavior as timer3.
+// Use a timer asynchronously.
+// Bind arguments to a callback function.
 
-class Printer {
-public:
-  Printer(boost::asio::io_service& io_service)
-      : timer_(io_service, boost::posix_time::seconds(1)), count_(0) {
-    // boost::asio::placeholders::error is not specified.
-    timer_.async_wait(boost::bind(&Printer::Print, this));
+void Print(const boost::system::error_code& ec,
+           boost::asio::deadline_timer* timer,
+           int* count) {
+  if (*count < 3) {
+    std::cout << *count << std::endl;
+    ++(*count);
+
+    // Change the timer's expiry time in the callback function.
+    timer->expires_at(timer->expires_at() + boost::posix_time::seconds(1));
+
+    // Start a new asynchronous wait.
+    timer->async_wait(boost::bind(Print, boost::asio::placeholders::error, timer, count));
   }
-
-  ~Printer() {
-    std::cout << "Final count is " << count_ << std::endl;
-  }
-
-  void Print() {
-    if (count_ < 3) {
-      std::cout << count_ << std::endl;
-      ++count_;
-
-      timer_.expires_at(timer_.expires_at() + boost::posix_time::seconds(1));
-      timer_.async_wait(boost::bind(&Printer::Print, this));
-    }
-  }
-
-private:
-  boost::asio::deadline_timer timer_;
-  int count_;
-};
+}
 
 int main() {
   boost::asio::io_service io_service;
-  Printer printer(io_service);
+
+  boost::asio::deadline_timer timer(io_service, boost::posix_time::seconds(1));
+  int count = 0;
+
+  // async_wait() expects a handler function (or function object) with the signature
+  // void(const boost::system::error_code&).
+  // Binding the additional parameters converts your Print function into a function object
+  // that matches the signature correctly.
+  timer.async_wait(boost::bind(Print, boost::asio::placeholders::error, &timer, &count));
+
   io_service.run();
+
+  std::cout << "Final count is " << count << std::endl;
 
   return 0;
 }

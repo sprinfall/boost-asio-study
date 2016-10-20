@@ -1,7 +1,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
+#include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread.hpp>
 
 // Use a timer asynchronously.
 
@@ -13,6 +13,7 @@ void SayHello(const boost::system::error_code&) {
 int main() {
   boost::asio::io_service io_service;
   boost::asio::deadline_timer timer(io_service, boost::posix_time::seconds(3));
+
   timer.async_wait(&SayHello);
 
   // This call will not return until the timer has expired and the callback
