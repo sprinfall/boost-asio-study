@@ -1,21 +1,36 @@
 #include <iostream>
-#include <boost/asio.hpp>
+
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 
-// The stand class provides the ability to post and dispatch handlers with the
+#define BOOST_ASIO_NO_DEPRECATED
+#if 0
+#include <boost/asio.hpp>
+#else
+#include <boost/asio/bind_executor.hpp>
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/placeholders.hpp>
+#include <boost/asio/strand.hpp>
+#endif
+
+using boost::asio::bind_executor;
+
+// Synchronise callback handlers in a multithreaded program.
+// Class strand provides the ability to post and dispatch handlers with the
 // guarantee that none of those handlers will execute concurrently.
 
 class Printer {
 public:
-  Printer(boost::asio::io_service& io_service)
-    : strand_(io_service),
-      timer1_(io_service, boost::posix_time::seconds(1)),
-      timer2_(io_service, boost::posix_time::seconds(1)),
-      count_(0) {
-    timer1_.async_wait(strand_.wrap(boost::bind(&Printer::Print1, this)));
-    timer2_.async_wait(strand_.wrap(boost::bind(&Printer::Print2, this)));
+  Printer(boost::asio::io_context& ioc)
+      : strand_(ioc)
+      , timer1_(ioc, boost::posix_time::seconds(1))
+      , timer2_(ioc, boost::posix_time::seconds(1))
+      , count_(0) {
+
+    timer1_.async_wait(bind_executor(strand_, boost::bind(&Printer::Print1, this)));
+    timer2_.async_wait(bind_executor(strand_, boost::bind(&Printer::Print2, this)));
   }
 
   ~Printer() {
@@ -28,7 +43,7 @@ public:
       ++count_;
 
       timer1_.expires_at(timer1_.expires_at() + boost::posix_time::seconds(1));
-      timer1_.async_wait(strand_.wrap(boost::bind(&Printer::Print1, this)));
+      timer1_.async_wait(bind_executor(strand_, boost::bind(&Printer::Print1, this)));
     }
   } 
 
@@ -38,25 +53,29 @@ public:
       ++count_;
 
       timer2_.expires_at(timer2_.expires_at() + boost::posix_time::seconds(1));
-      timer2_.async_wait(strand_.wrap(boost::bind(&Printer::Print2, this)));
+      timer2_.async_wait(bind_executor(strand_, boost::bind(&Printer::Print2, this)));
     }
   }
 
 private:
-  boost::asio::io_service::strand strand_;
+  boost::asio::io_context::strand strand_;
   boost::asio::deadline_timer timer1_;
   boost::asio::deadline_timer timer2_;
   int count_;
 };
 
 int main() {
-  boost::asio::io_service io_service;
-  Printer printer(io_service);
+  boost::asio::io_context ioc;
 
-  // io_service::run() is called from two thread.
-  boost::thread thread(boost::bind(&boost::asio::io_service::run, &io_service));
-  io_service.run();
+  Printer printer(ioc);
 
+  // The new thread runs a loop.
+  boost::thread thread(boost::bind(&boost::asio::io_context::run, &ioc));
+
+  // The main thread runs another loop.
+  ioc.run();
+
+  // Wait for the thread to finish.
   thread.join();
 
   return 0;

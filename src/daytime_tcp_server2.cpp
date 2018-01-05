@@ -30,7 +30,7 @@ public:
   void Start() {
     msg_ = Now();
 
-    auto handler = boost::bind(&TcpConnection::WriteHandler,
+    auto handler = boost::bind(&TcpConnection::HandleWrite,
                                shared_from_this(),
                                boost::asio::placeholders::error,
                                boost::asio::placeholders::bytes_transferred);
@@ -43,7 +43,7 @@ private:
   }
 
   // If parameters are not needed, it is possible to remove them from the function.
-  void WriteHandler(const boost::system::error_code& ec, size_t bytes_transferred) {
+  void HandleWrite(const boost::system::error_code& ec, size_t bytes_transferred) {
   }
 
 private:

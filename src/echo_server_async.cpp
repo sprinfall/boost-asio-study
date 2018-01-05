@@ -1,11 +1,13 @@
-#include <ctime>
 #include <iostream>
 #include <string>
+
 #include <boost/array.hpp>
-#include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/shared_ptr.hpp>
+
+#define BOOST_ASIO_NO_DEPRECATED
+#include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -13,8 +15,8 @@ class Connection : public boost::enable_shared_from_this<Connection> {
 public:
   typedef boost::shared_ptr<Connection> Pointer;
 
-  static Pointer Create(boost::asio::io_service& io_service) {
-    return Pointer(new Connection(io_service));
+  static Pointer Create(boost::asio::io_context& ioc) {
+    return Pointer(new Connection(ioc));
   }
 
   tcp::socket& socket() {
@@ -22,29 +24,29 @@ public:
   }
 
   void Start() {
-    DoRead();
+    AsyncRead();
   }
 
   void HandleRead(const boost::system::error_code& ec,
                   size_t bytes_transferred) {
     if (!ec) {
-      DoWrite(bytes_transferred);
+      std::string msg(data_.c_array(), bytes_transferred);
+      AsyncWrite(bytes_transferred);
     }
   }
 
   void HandleWrite(const boost::system::error_code& ec) {
     if (!ec) {
-      DoRead();
+      AsyncRead();
     }
   }
 
-  void DoRead() {
+  void AsyncRead() {
     auto handler = boost::bind(&Connection::HandleRead, shared_from_this(), _1, _2);
-
     socket_.async_read_some(boost::asio::buffer(data_), handler);
   }
 
-  void DoWrite(size_t bytes_transferred) {
+  void AsyncWrite(size_t bytes_transferred) {
     auto handler = boost::bind(&Connection::HandleWrite,
                                shared_from_this(),
                                boost::asio::placeholders::error);
@@ -55,8 +57,8 @@ public:
   }
 
 private:
-  Connection(boost::asio::io_service& io_service)
-    : socket_(io_service) {
+  Connection(boost::asio::io_context& ioc)
+      : socket_(ioc) {
   }
 
 private:
@@ -69,15 +71,15 @@ private:
 
 class Server {
 public:
-  Server(boost::asio::io_service& io_service, short port)
-      : io_service_(io_service)
-      , acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {
+  Server(boost::asio::io_context& ioc, short port)
+      : ioc_(ioc)
+      , acceptor_(ioc, tcp::endpoint(tcp::v4(), port)) {
     StartAccept();
   }
 
 private:
   void StartAccept() {
-    Connection::Pointer conn(Connection::Create(io_service_));
+    Connection::Pointer conn(Connection::Create(ioc_));
 
     auto handler = boost::bind(&Server::HandleAccept, this, conn, _1);
     acceptor_.async_accept(conn->socket(), handler);
@@ -92,13 +94,22 @@ private:
   }
 
 private:
-  boost::asio::io_service& io_service_;
+  boost::asio::io_context& ioc_;
   tcp::acceptor acceptor_;
 };
 
-int main() {
-  boost::asio::io_service io_service;
-  Server server(io_service, 2016);
-  io_service.run();
+int main(int argc, char* argv[]) {
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
+    return 1;
+  }
+
+  unsigned short port = std::atoi(argv[1]);
+
+  boost::asio::io_context ioc;
+  Server server(ioc, port);
+
+  ioc.run();
+
   return 0;
 }

@@ -1,24 +1,26 @@
 #include <iostream>
+
 #include <boost/array.hpp>
-#include <boost/asio.hpp>
 #include <boost/bind.hpp>
+
+#define BOOST_ASIO_NO_DEPRECATED
+#include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
 class TcpClient {
 public:
-  TcpClient(boost::asio::io_service& io_service, const std::string& host)
-      : socket_(io_service) {
+  TcpClient(boost::asio::io_context& ioc, const std::string& host)
+      : socket_(ioc) {
     StartConnect(host);
   }
 
 private:
   void StartConnect(const std::string& host) {
-    tcp::resolver resolver(socket_.get_io_service());
-    tcp::resolver::query query(host, "daytime");
+    tcp::resolver resolver(socket_.get_executor().context());
 
     boost::system::error_code ec;
-    tcp::resolver::iterator it = resolver.resolve(query, ec);
+    tcp::resolver::results_type endpoints = resolver.resolve(host, "daytime", ec);
 
     if (!ec) {
       auto handler = boost::bind(&TcpClient::HandleConnect,
@@ -71,10 +73,10 @@ int main(int argc, char* argv[]) {
     std::cout << "Host not provided, use '" << host << "' by default." << std::endl;
   }
 
-  boost::asio::io_service io_service;
-  TcpClient tcp_client(io_service, host);
+  boost::asio::io_context ioc;
+  TcpClient tcp_client(ioc, host);
 
-  io_service.run();
+  ioc.run();
 
   return 0;
 }
