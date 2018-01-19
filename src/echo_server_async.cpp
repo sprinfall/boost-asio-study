@@ -1,100 +1,144 @@
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
 
 #define BOOST_ASIO_NO_DEPRECATED
 #include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
-class Connection : public boost::enable_shared_from_this<Connection> {
+#define BUF_SIZE 1024
+
+#define USE_BIND 1
+#define USE_MOVE_ACCEPT 1
+
+class Session : public std::enable_shared_from_this<Session> {
 public:
-  typedef boost::shared_ptr<Connection> Pointer;
-
-  static Pointer Create(boost::asio::io_context& ioc) {
-    return Pointer(new Connection(ioc));
+#if USE_MOVE_ACCEPT
+  Session(tcp::socket socket)
+      : socket_(std::move(socket)) {
   }
-
-  tcp::socket& socket() {
-    return socket_;
-  }
+#else
+  Session()
+#endif
 
   void Start() {
-    AsyncRead();
+    DoRead();
   }
 
-  void HandleRead(const boost::system::error_code& ec,
-                  size_t bytes_transferred) {
-    if (!ec) {
-      std::string msg(data_.c_array(), bytes_transferred);
-      AsyncWrite(bytes_transferred);
-    }
+  void DoRead() {
+#if USE_BIND
+    socket_.async_read_some(boost::asio::buffer(buffer_),
+                            std::bind(&Session::HandleRead,
+                                      shared_from_this(),
+                                      std::placeholders::_1,
+                                      std::placeholders::_2));
+#else
+    auto self(shared_from_this());
+    socket_.async_read_some(
+        boost::asio::buffer(buffer_),
+        [this, self](boost::system::error_code ec, std::size_t length) {
+          if (!ec) {
+            DoWrite(length);
+          }
+        });
+#endif
   }
 
-  void HandleWrite(const boost::system::error_code& ec) {
-    if (!ec) {
-      AsyncRead();
-    }
-  }
-
-  void AsyncRead() {
-    auto handler = boost::bind(&Connection::HandleRead, shared_from_this(), _1, _2);
-    socket_.async_read_some(boost::asio::buffer(data_), handler);
-  }
-
-  void AsyncWrite(size_t bytes_transferred) {
-    auto handler = boost::bind(&Connection::HandleWrite,
-                               shared_from_this(),
-                               boost::asio::placeholders::error);
-
+  void DoWrite(std::size_t length) {
+#if USE_BIND
     boost::asio::async_write(socket_,
-                             boost::asio::buffer(data_, bytes_transferred),
-                             handler);
+                             boost::asio::buffer(buffer_, length),
+                             std::bind(&Session::HandleWrite,
+                                       shared_from_this(),
+                                       std::placeholders::_1,
+                                       std::placeholders::_2));
+#else
+    auto self(shared_from_this());
+    boost::asio::async_write(
+        socket_,
+        boost::asio::buffer(buffer_, length),
+        [this, self](boost::system::error_code ec, std::size_t /*length*/) {
+          if (!ec) {
+            DoRead();
+          }
+        });
+#endif
   }
 
-private:
-  Connection(boost::asio::io_context& ioc)
-      : socket_(ioc) {
+#if USE_BIND
+  void HandleRead(boost::system::error_code ec,
+                  std::size_t length) {
+    if (!ec) {
+      DoWrite(length);
+    }
   }
 
+  void HandleWrite(boost::system::error_code ec,
+                   std::size_t /*length*/) {
+    if (!ec) {
+      DoRead();
+    }
+  }
+#endif  // USE_BIND
+
 private:
-  // The socket used to communicate with the client.
   tcp::socket socket_;
-
-  // Buffer used to store data received from the client.
-  boost::array<char, 1024> data_;
+  std::array<char, BUF_SIZE> buffer_;
 };
 
 class Server {
 public:
   Server(boost::asio::io_context& ioc, short port)
-      : ioc_(ioc)
-      , acceptor_(ioc, tcp::endpoint(tcp::v4(), port)) {
-    StartAccept();
+      : acceptor_(ioc, tcp::endpoint(tcp::v4(), port)) {
+    DoAccept();
   }
 
 private:
-  void StartAccept() {
-    Connection::Pointer conn(Connection::Create(ioc_));
+  void DoAccept() {
+    // A note about bind:
 
-    auto handler = boost::bind(&Server::HandleAccept, this, conn, _1);
-    acceptor_.async_accept(conn->socket(), handler);
-  }
+    // std::bind works in VS2015.
+    //acceptor_.async_accept(std::bind(&Server::HandleAccept,
+    //                                 this,
+    //                                 std::placeholders::_1,
+    //                                 std::placeholders::_2));
 
-  void HandleAccept(boost::shared_ptr<Connection> conn,
-                    const boost::system::error_code& ec) {
-    if (!ec) {
-      conn->Start();
-    }
-    StartAccept();
+    // boost::bind doesn't work in VS2015.
+
+    // Both std::bind and boost::bind don't work in VS2013.
+    // The reason is mainly about the move semantics.
+
+    // But of course, async_accept has other signatures which could be
+    // used with bind.
+
+#if USE_MOVE_ACCEPT
+    acceptor_.async_accept(
+        [this](boost::system::error_code ec, tcp::socket socket) {
+          if (!ec) {
+            std::make_shared<Session>(std::move(socket))->Start();
+          }
+          DoAccept();
+        });
+#else
+    // TODO
+    tcp::socket socket(acceptor_.get_executor().context());
+
+    acceptor_.async_accept(
+        socket,
+        [this](boost::system::error_code ec) {
+          if (!ec) {
+            std::make_shared<Session>(socket)->Start();
+          }
+          DoAccept();
+        });
+#endif  // USE_MOVE_ACCEPT
   }
 
 private:
-  boost::asio::io_context& ioc_;
   tcp::acceptor acceptor_;
 };
 

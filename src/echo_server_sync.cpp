@@ -8,22 +8,36 @@
 
 using boost::asio::ip::tcp;
 
-#define BUF_SIZE 128
+#define SOCKET_REF 1
 
+enum {
+  BUF_SIZE = 1024
+};
+
+#if SOCKET_REF
 void Session(tcp::socket& socket) {
-  while (true) {
-    boost::array<char, BUF_SIZE> data;
+#else
+void Session(tcp::socket socket) {  // Better
+#endif
+  try {
+    while (true) {
+      boost::array<char, BUF_SIZE> data;
 
-    boost::system::error_code ec;
-    size_t length = socket.read_some(boost::asio::buffer(data), ec);
+      boost::system::error_code ec;
+      size_t length = socket.read_some(boost::asio::buffer(data), ec);
 
-    if (ec == boost::asio::error::eof) {
-      break;  // Connection closed cleanly by peer.
-    } else if (ec) {
-      throw boost::system::system_error(ec);  // Some other error.
+      if (ec == boost::asio::error::eof) {
+        std::cout << "Connection closed cleanly by peer\n";
+        break;
+      } else if (ec) {
+        // Some other error
+        throw boost::system::system_error(ec);
+      }
+
+      boost::asio::write(socket, boost::asio::buffer(data, length));
     }
-
-    boost::asio::write(socket, boost::asio::buffer(data, length));
+  } catch (std::exception& e) {
+    std::cerr << "Exception: " <<  e.what() << std::endl;
   }
 }
 
@@ -42,15 +56,20 @@ int main(int argc, char* argv[]) {
 
   try {
     // Handle one connection at a time.
-    // TODO: Create a thread for each incoming connection.
     while (true) {
-      // Create a socket that will represent the connection to the client.
+#if SOCKET_REF
+#if 0
       tcp::socket socket(ioc);
-
-      // Wait for a connection.
       acceptor.accept(socket);
-
       Session(socket);
+#else
+      tcp::socket socket = acceptor.accept();
+      Session(socket);
+#endif
+#else
+      // Better
+      Session(acceptor.accept());
+#endif
     }
   } catch (std::exception& e) {
     std::cerr << e.what() << std::endl;

@@ -1,7 +1,8 @@
 # boost-asio-study
-Examples for C++ boost asio library.
 
-uv_xxx are identical examples as the ones in An Introduction to libuv.
+Examples and tutorials for C++ boost asio library.
 
-wx-asio: An example of using asio in GUI (wxWidgets) program.
+![中文教程](Tutorial_zh-CN.md)
 
+Based on **Boost v1.66**.
+Tested with **VS 2013 & 2015**.

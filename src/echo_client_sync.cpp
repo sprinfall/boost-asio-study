@@ -1,6 +1,5 @@
+#include <array>
 #include <iostream>
-
-#include <boost/array.hpp>
 
 #define BOOST_ASIO_NO_DEPRECATED
 #if 0
@@ -19,7 +18,9 @@ using boost::asio::ip::tcp;
 
 #define USE_GLOBAL_READ 0
 
-#define BUF_SIZE 128
+enum {
+  BUF_SIZE = 1024
+};
 
 int main(int argc, char* argv[]) {
   if (argc != 3) {
@@ -32,25 +33,31 @@ int main(int argc, char* argv[]) {
 
   boost::asio::io_context ioc;
 
+  // NOTE:
+  // We don't use output parameter error_code in this example.
+  // Using exception handling could largely simplify the source code.
   try {
     tcp::resolver resolver(ioc);
 
-    // You can simply use "auto" instead of "tcp::resolver::results_type".
-    tcp::resolver::results_type endpoints = resolver.resolve(tcp::v4(), host, port);
+    // Return type: tcp::resolver::results_type
+    auto endpoints = resolver.resolve(tcp::v4(), host, port);
 
     // Don't use socket.connect() directly.
     // Function connect() calls socket.connect() internally.
     tcp::socket socket(ioc);
     boost::asio::connect(socket, endpoints);
 
-    std::cout << "Enter message: ";
-
     // Get user input.
+
     char request[BUF_SIZE];
-    std::cin.getline(request, BUF_SIZE);
+    std::size_t request_length = 0;
+    do {
+      std::cout << "Enter message: ";
+      std::cin.getline(request, BUF_SIZE);
+      request_length = strlen(request);
+    } while (request_length == 0);
 
     // Write to the socket.
-    size_t request_length = strlen(request);
     boost::asio::write(socket, boost::asio::buffer(request, request_length));
 
     // Read the response.
@@ -59,39 +66,29 @@ int main(int argc, char* argv[]) {
     std::cout << "Reply is: ";
 
 #if USE_GLOBAL_READ
-    // Receive response with global read().
+    // Receive reply with global read().
 
     char reply[BUF_SIZE];
 
     // Global read() returns once the specified size of buffer has been
     // fully filled.
-    size_t reply_length = boost::asio::read(
+    std::size_t reply_length = boost::asio::read(
         socket,
         boost::asio::buffer(reply, request_length));
 
     std::cout.write(reply, reply_length);
 #else
-    // Receive response with socket.read_some().
+    // Receive reply with socket.read_some().
 
-    size_t total_response_length = 0;
-
+    std::size_t total_reply_length = 0;
     while (true) {
-      boost::array<char, BUF_SIZE> reply;
-      boost::system::error_code ec;
- 
-      size_t response_length = socket.read_some(boost::asio::buffer(reply), ec);
+      std::array<char, BUF_SIZE> reply;
+      std::size_t reply_length = socket.read_some(boost::asio::buffer(reply));
 
-      if (ec == boost::asio::error::eof) {
-        break;  // Connection closed cleanly by peer.
-      } else if (ec) {
-        throw boost::system::system_error(ec);  // Some other error.
-      }
+      std::cout.write(reply.data(), reply_length);
 
-      std::cout.write(reply.data(), response_length);
-
-      // Complete condition!
-      total_response_length += response_length;
-      if (total_response_length >= request_length) {
+      total_reply_length += reply_length;
+      if (total_reply_length >= request_length) {
         break;
       }
     }

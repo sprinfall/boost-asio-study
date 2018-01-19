@@ -14,7 +14,7 @@
 // Use a timer asynchronously.
 
 // Handler to be called when the asynchronous wait finishes.
-void Print(const boost::system::error_code&) {
+void Print(boost::system::error_code ec) {
   std::cout << "Hello, world!" << std::endl;
 }
 

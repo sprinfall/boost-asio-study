@@ -70,17 +70,17 @@ private:
       std::cerr << "Resolve: " << ec.message() << std::endl;
     } else {
       endpoints_ = results;
-      AsyncConnect(endpoints_.begin());
+      DoConnect(endpoints_.begin());
     }
   }
 #endif  // ASYNC_RESOLVE
 
-  void AsyncConnect(tcp::resolver::results_type::iterator endpoint_it) {
+  void DoConnect(tcp::resolver::results_type::iterator endpoint_it) {
     if (endpoint_it != endpoints_.end()) {
-      auto handler = boost::bind(&WebClient::HandleConnect,
-                                 this,
-                                 boost::placeholders::_1,
-                                 endpoint_it);
+      auto handler = std::bind(&WebClient::HandleConnect,
+                               this,
+                               std::placeholders::_1,
+                               endpoint_it);
       socket_.async_connect(endpoint_it->endpoint(), handler);
     }
   }
@@ -94,7 +94,7 @@ private:
       socket_.close();
 
       // Try the next available endpoint.
-      AsyncConnect(++endpoint_it);
+      DoConnect(++endpoint_it);
     } else {
       AsyncWrite();
     }

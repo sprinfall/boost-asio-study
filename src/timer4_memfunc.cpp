@@ -9,7 +9,6 @@
 #else
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_context.hpp>
-#include <boost/asio/placeholders.hpp>
 #endif
 
 // Use a member function as handler.
@@ -25,20 +24,17 @@ public:
   }
 
   void Start() {
-    // ISSUE:
-    // Cannot compile if add parameter "error_code" to Print().
-    // Bug?
-    timer_.async_wait(boost::bind(&Printer::Print, this/*, boost::asio::placeholders::error*/));
+    timer_.async_wait(boost::bind(&Printer::Print, this, boost::placeholders::_1));
   }
 
 private:
-  void Print(/*const boost::system::error_code& ec*/) {
+  void Print(boost::system::error_code ec) {
     if (count_ < 3) {
       std::cout << count_ << std::endl;
       ++count_;
 
       timer_.expires_at(timer_.expires_at() + boost::posix_time::seconds(1));
-      timer_.async_wait(boost::bind(&Printer::Print, this));
+      timer_.async_wait(boost::bind(&Printer::Print, this, boost::placeholders::_1));
     }
   }
 
