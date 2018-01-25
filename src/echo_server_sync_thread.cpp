@@ -1,20 +1,21 @@
 #include <iostream>
 #include <string>
+#include <array>
 
 // Use C++11 move semantics for the socket.
+// VS2015+
 #define USE_MOVE_SEMANTICS 1
 
-#include <boost/array.hpp>
-#include <boost/shared_ptr.hpp>
+#include "boost/shared_ptr.hpp"
 
 #if USE_MOVE_SEMANTICS
 #include <thread>
 #else
-#include <boost/thread.hpp>
+#include "boost/thread.hpp"
 #endif
 
 #define BOOST_ASIO_NO_DEPRECATED
-#include <boost/asio.hpp>
+#include "boost/asio.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -30,7 +31,7 @@ void Session(boost::shared_ptr<tcp::socket>& socket) {
 #endif  // USE_MOVE_SEMANTICS
   try {
     while (true) {
-      boost::array<char, BUF_SIZE> data;
+      std::array<char, BUF_SIZE> data;
 
       boost::system::error_code ec;
 
