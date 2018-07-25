@@ -4,7 +4,7 @@
 
 // Use C++11 move semantics for the socket.
 // VS2015+
-#define USE_MOVE_SEMANTICS 1
+#define USE_MOVE_SEMANTICS 0
 
 #include "boost/shared_ptr.hpp"
 

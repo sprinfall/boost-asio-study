@@ -35,6 +35,14 @@ if(Boost_FOUND)
     link_directories(${Boost_LIBRARY_DIRS})
 endif()
 
+set(OPENSSL_USE_STATIC_LIBS ON)
+set(OPENSSL_MSVC_STATIC_RT ON)
+find_package(OpenSSL)
+if(OPENSSL_FOUND)
+	include_directories(${OPENSSL_INCLUDE_DIR})
+	message(STATUS ${OPENSSL_LIBRARIES})
+endif()
+
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 add_subdirectory(src)

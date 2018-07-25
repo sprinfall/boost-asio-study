@@ -18,12 +18,11 @@ using boost::asio::ip::tcp;
 class Session : public std::enable_shared_from_this<Session> {
 public:
 #if USE_MOVE_ACCEPT
-  Session(tcp::socket socket)
-      : socket_(std::move(socket)) {
+  Session(tcp::socket socket) : socket_(std::move(socket)) {
   }
 #else
   Session()
-#endif
+#endif  // USE_MOVE_ACCEPT
 
   void Start() {
     DoRead();
@@ -70,15 +69,13 @@ public:
   }
 
 #if USE_BIND
-  void HandleRead(boost::system::error_code ec,
-                  std::size_t length) {
+  void HandleRead(boost::system::error_code ec, std::size_t length) {
     if (!ec) {
       DoWrite(length);
     }
   }
 
-  void HandleWrite(boost::system::error_code ec,
-                   std::size_t /*length*/) {
+  void HandleWrite(boost::system::error_code ec, std::size_t /*length*/) {
     if (!ec) {
       DoRead();
     }
