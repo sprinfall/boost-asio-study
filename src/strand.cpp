@@ -1,18 +1,18 @@
 #include <iostream>
 
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread.hpp>
+#include "boost/bind.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/thread.hpp"
 
 #define BOOST_ASIO_NO_DEPRECATED
 #if 0
-#include <boost/asio.hpp>
+#include "boost/asio.hpp"
 #else
-#include <boost/asio/bind_executor.hpp>
-#include <boost/asio/deadline_timer.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/placeholders.hpp>
-#include <boost/asio/strand.hpp>
+#include "boost/asio/bind_executor.hpp"
+#include "boost/asio/deadline_timer.hpp"
+#include "boost/asio/io_context.hpp"
+#include "boost/asio/placeholders.hpp"
+#include "boost/asio/strand.hpp"
 #endif
 
 using boost::asio::bind_executor;
@@ -65,15 +65,15 @@ private:
 };
 
 int main() {
-  boost::asio::io_context ioc;
+  boost::asio::io_context io_context;
 
-  Printer printer(ioc);
+  Printer printer(io_context);
 
   // The new thread runs a loop.
-  boost::thread thread(boost::bind(&boost::asio::io_context::run, &ioc));
+  boost::thread thread(std::bind(&boost::asio::io_context::run, &io_context));
 
   // The main thread runs another loop.
-  ioc.run();
+  io_context.run();
 
   // Wait for the thread to finish.
   thread.join();

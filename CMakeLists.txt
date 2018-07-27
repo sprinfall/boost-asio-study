@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(boost_asio_study)
 
+option(ENABLE_SSL "Enable SSL/HTTPS examples (need OpenSSL)?" ON)
+
 # See: https://stackoverflow.com/a/40217291
 if(WIN32)
 	macro(get_WIN32_WINNT version)
@@ -35,12 +37,13 @@ if(Boost_FOUND)
     link_directories(${Boost_LIBRARY_DIRS})
 endif()
 
-set(OPENSSL_USE_STATIC_LIBS ON)
-set(OPENSSL_MSVC_STATIC_RT ON)
-find_package(OpenSSL)
-if(OPENSSL_FOUND)
-	include_directories(${OPENSSL_INCLUDE_DIR})
-	message(STATUS ${OPENSSL_LIBRARIES})
+if(ENABLE_SSL)
+	set(OPENSSL_USE_STATIC_LIBS ON)
+	set(OPENSSL_MSVC_STATIC_RT ON)
+	find_package(OpenSSL)
+	if(OPENSSL_FOUND)
+		include_directories(${OPENSSL_INCLUDE_DIR})
+	endif()
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/src)

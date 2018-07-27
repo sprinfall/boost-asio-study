@@ -1,33 +1,30 @@
+#include <array>
 #include <iostream>
 #include <string>
 
-#include <boost/array.hpp>
-
 #define BOOST_ASIO_NO_DEPRECATED
-#include <boost/asio.hpp>
+#include "boost/asio.hpp"
 
 using boost::asio::ip::tcp;
 
 #define SOCKET_REF 1
 
-enum {
-  BUF_SIZE = 1024
-};
+enum { BUF_SIZE = 1024 };
 
 #if SOCKET_REF
 void Session(tcp::socket& socket) {
 #else
 void Session(tcp::socket socket) {  // Better
-#endif
+#endif  // SOCKET_REF
   try {
     while (true) {
-      boost::array<char, BUF_SIZE> data;
+      std::array<char, BUF_SIZE> data;
 
       boost::system::error_code ec;
-      size_t length = socket.read_some(boost::asio::buffer(data), ec);
+      std::size_t length = socket.read_some(boost::asio::buffer(data), ec);
 
       if (ec == boost::asio::error::eof) {
-        std::cout << "Connection closed cleanly by peer\n";
+        std::cout << "Connection closed cleanly by peer" << std::endl;
         break;
       } else if (ec) {
         // Some other error
@@ -36,7 +33,7 @@ void Session(tcp::socket socket) {  // Better
 
       boost::asio::write(socket, boost::asio::buffer(data, length));
     }
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     std::cerr << "Exception: " <<  e.what() << std::endl;
   }
 }
@@ -49,15 +46,16 @@ int main(int argc, char* argv[]) {
 
   unsigned short port = std::atoi(argv[1]);
 
-  boost::asio::io_context ioc;
+  boost::asio::io_context io_context;
 
   // Create an acceptor to listen for new connections.
-  tcp::acceptor acceptor(ioc, tcp::endpoint(tcp::v4(), port));
+  tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), port));
 
   try {
     // Handle one connection at a time.
     while (true) {
 #if SOCKET_REF
+
 #if 0
       tcp::socket socket(ioc);
       acceptor.accept(socket);
@@ -66,12 +64,15 @@ int main(int argc, char* argv[]) {
       tcp::socket socket = acceptor.accept();
       Session(socket);
 #endif
+
 #else
+
       // Better
       Session(acceptor.accept());
-#endif
+
+#endif  // SOCKET_REF
     }
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
   }
 

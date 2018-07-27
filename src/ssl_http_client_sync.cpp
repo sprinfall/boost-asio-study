@@ -1,11 +1,13 @@
+// HTTPs client sending a GET request.
+// Based on Asio synchronous APIs.
+// Adapted from: https://stackoverflow.com/q/28264313/6825348
+
 #include <iostream>
 #include <string>
 
 #define BOOST_ASIO_NO_DEPRECATED
 #include "boost/asio.hpp"
 #include "boost/asio/ssl.hpp"
-
-// Adapted from: https://stackoverflow.com/q/28264313/6825348
 
 using boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
@@ -117,7 +119,7 @@ int main(int argc, char* argv[]) {
     std::getline(response_stream, status_line);
     std::cout << status_line << std::endl;
 
-    // Just ignore remaining data.
+    // TODO: Continue to read until the end.
 
   } catch (const std::exception& e) {
     std::cout << "Exception: " << e.what() << "\n";

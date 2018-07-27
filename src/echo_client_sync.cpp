@@ -1,18 +1,18 @@
+// Synchronous echo client.
+
 #include <array>
 #include <iostream>
 
 #define BOOST_ASIO_NO_DEPRECATED
 #if 0
-#include <boost/asio.hpp>
+#include "boost/asio.hpp"
 #else
-#include <boost/asio/connect.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/read.hpp>
-#include <boost/asio/write.hpp>
+#include "boost/asio/connect.hpp"
+#include "boost/asio/io_context.hpp"
+#include "boost/asio/ip/tcp.hpp"
+#include "boost/asio/read.hpp"
+#include "boost/asio/write.hpp"
 #endif
-
-// Synchronous echo client.
 
 using boost::asio::ip::tcp;
 
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << std::endl;
 
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
   }
 

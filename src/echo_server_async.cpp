@@ -2,18 +2,22 @@
 #include <string>
 #include <memory>
 
-#include <boost/array.hpp>
-#include <boost/bind.hpp>
+#include "boost/array.hpp"
+#include "boost/bind.hpp"
 
 #define BOOST_ASIO_NO_DEPRECATED
-#include <boost/asio.hpp>
+#include "boost/asio.hpp"
 
 using boost::asio::ip::tcp;
 
-#define BUF_SIZE 1024
+// -----------------------------------------------------------------------------
 
-#define USE_BIND 1
+#define USE_BIND 1  // Use std::bind or lambda
 #define USE_MOVE_ACCEPT 1
+
+enum { BUF_SIZE = 1024 };
+
+// -----------------------------------------------------------------------------
 
 class Session : public std::enable_shared_from_this<Session> {
 public:
@@ -44,7 +48,7 @@ public:
             DoWrite(length);
           }
         });
-#endif
+#endif  // USE_BIND
   }
 
   void DoWrite(std::size_t length) {
@@ -57,6 +61,7 @@ public:
                                        std::placeholders::_2));
 #else
     auto self(shared_from_this());
+
     boost::asio::async_write(
         socket_,
         boost::asio::buffer(buffer_, length),
@@ -65,7 +70,7 @@ public:
             DoRead();
           }
         });
-#endif
+#endif  // USE_BIND
   }
 
 #if USE_BIND
@@ -87,10 +92,12 @@ private:
   std::array<char, BUF_SIZE> buffer_;
 };
 
+// -----------------------------------------------------------------------------
+
 class Server {
 public:
-  Server(boost::asio::io_context& ioc, short port)
-      : acceptor_(ioc, tcp::endpoint(tcp::v4(), port)) {
+  Server(boost::asio::io_context& io_context, unsigned short port)
+      : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
     DoAccept();
   }
 
@@ -139,6 +146,8 @@ private:
   tcp::acceptor acceptor_;
 };
 
+// -----------------------------------------------------------------------------
+
 int main(int argc, char* argv[]) {
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
@@ -147,10 +156,11 @@ int main(int argc, char* argv[]) {
 
   unsigned short port = std::atoi(argv[1]);
 
-  boost::asio::io_context ioc;
-  Server server(ioc, port);
+  boost::asio::io_context io_context;
 
-  ioc.run();
+  Server server(io_context, port);
+
+  io_context.run();
 
   return 0;
 }

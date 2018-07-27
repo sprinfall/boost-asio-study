@@ -1,4 +1,6 @@
-#include <algorithm>
+// HTTPs client sending a GET request.
+// Based on Asio asynchronous APIs.
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -11,6 +13,7 @@
 
 using boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
+
 typedef ssl::stream<tcp::socket> ssl_socket;
 
 // -----------------------------------------------------------------------------
@@ -40,8 +43,7 @@ private:
   ssl::stream<tcp::socket> ssl_socket_;
 
   boost::asio::streambuf request_;
-  std::vector<char> response_;
-  bool start_line_read_;
+  std::vector<char> buffer_;
 };
 
 // -----------------------------------------------------------------------------
@@ -52,17 +54,23 @@ Client::Client(boost::asio::io_context& io_context,
       host_(host), path_(path),
       ssl_context_(ssl::context::sslv23),
       ssl_socket_(io_context_, ssl_context_),
-      response_(1024),
-      start_line_read_(false) {
+      buffer_(1024) {
 
   // Use the default paths for finding CA certificates.
   ssl_context_.set_default_verify_paths();
 
+  boost::system::error_code ec;
+
   // Get a list of endpoints corresponding to the server name.
   tcp::resolver resolver(io_context_);
-  auto endpoints = resolver.resolve(host_, "https");
+  auto endpoints = resolver.resolve(host_, "https", ec);
 
-  // void ConnectHandler(boost::system::error_code, tcp::endpoint)
+  if (ec) {
+    std::cerr << "Resolve failed: " << ec.message() << std::endl;
+    return;
+  }
+
+  // ConnectHandler: void (boost::system::error_code, tcp::endpoint)
   boost::asio::async_connect(ssl_socket_.lowest_layer(), endpoints,
                              std::bind(&Client::ConnectHandler, this,
                                        std::placeholders::_1,
@@ -115,25 +123,20 @@ void Client::WriteHandler(boost::system::error_code ec, std::size_t length) {
 }
 
 void Client::AsyncReadSome() {
-  ssl_socket_.async_read_some(boost::asio::buffer(response_),
+  ssl_socket_.async_read_some(boost::asio::buffer(buffer_),
                               std::bind(&Client::ReadHandler, this,
                                         std::placeholders::_1,
                                         std::placeholders::_2));
 }
 
+
 void Client::ReadHandler(boost::system::error_code ec, std::size_t length) {
   if (ec) {
     std::cout << ec.message() << std::endl;
   } else {
-    // Just print the start line of the response.
-    // Should call AsyncReadSome() until the end.
+    std::cout.write(buffer_.data(), length);
 
-    std::string data(response_.data(), length);
-
-    std::size_t pos = data.find("\r\n");
-    if (pos != std::string::npos) {
-      std::cout << data.substr(0, pos) << std::endl;
-    }
+    // TODO: Call AsyncReadSome() to read until the end.
   }
 }
 
@@ -163,7 +166,7 @@ int main(int argc, char* argv[]) {
     io_context.run();
 
   } catch (const std::exception& e) {
-    std::cout << "Exception: " << e.what() << "\n";
+    std::cout << "Exception: " << e.what() << std::endl;
   }
 
   return 0;

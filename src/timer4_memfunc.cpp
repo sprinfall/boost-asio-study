@@ -1,14 +1,14 @@
+#include <functional>
 #include <iostream>
 
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 #define BOOST_ASIO_NO_DEPRECATED
 #if 0
-#include <boost/asio.hpp>
+#include "boost/asio.hpp"
 #else
-#include <boost/asio/deadline_timer.hpp>
-#include <boost/asio/io_context.hpp>
+#include "boost/asio/deadline_timer.hpp"
+#include "boost/asio/io_context.hpp"
 #endif
 
 // Use a member function as handler.
@@ -24,7 +24,7 @@ public:
   }
 
   void Start() {
-    timer_.async_wait(boost::bind(&Printer::Print, this, boost::placeholders::_1));
+    timer_.async_wait(std::bind(&Printer::Print, this, std::placeholders::_1));
   }
 
 private:
@@ -34,7 +34,7 @@ private:
       ++count_;
 
       timer_.expires_at(timer_.expires_at() + boost::posix_time::seconds(1));
-      timer_.async_wait(boost::bind(&Printer::Print, this, boost::placeholders::_1));
+      timer_.async_wait(std::bind(&Printer::Print, this, std::placeholders::_1));
     }
   }
 
@@ -44,12 +44,12 @@ private:
 };
 
 int main() {
-  boost::asio::io_context ioc;
+  boost::asio::io_context io_context;
 
-  Printer printer(ioc);
+  Printer printer(io_context);
   printer.Start();
 
-  ioc.run();
+  io_context.run();
 
   return 0;
 }
