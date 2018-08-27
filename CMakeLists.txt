@@ -1,7 +1,19 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1.0)
+
+if(POLICY CMP0074)
+    # find_package() uses <PackageName>_ROOT variables.
+    # This policy was introduced in CMake version 3.12.
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
 project(boost_asio_study)
 
 option(ENABLE_SSL "Enable SSL/HTTPS examples (need OpenSSL)?" ON)
+
+# C++ standard requirements.
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # See: https://stackoverflow.com/a/40217291
 if(WIN32)
@@ -31,7 +43,8 @@ if(WIN32)
 endif(WIN32)
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost)
+set(Boost_USE_MULTITHREADED ON)
+find_package(Boost 1.66.0 REQUIRED)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})

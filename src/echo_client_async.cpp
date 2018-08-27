@@ -3,11 +3,11 @@
 #include <array>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <string>
 
 #define BOOST_ASIO_NO_DEPRECATED
 #include "boost/asio.hpp"
-#include "boost/scoped_ptr.hpp"
 
 #include "utility.h"  // for printing endpoints
 
@@ -19,34 +19,40 @@ using boost::asio::ip::tcp;
 // Only resolve IPv4.
 #define RESOLVE_IPV4_ONLY 1
 
+// Use global function async_connect().
+#define USE_GLOBAL_ASYNC_CONNECT 1
+
 // -----------------------------------------------------------------------------
 
 class Client {
-public:
+ public:
   Client(boost::asio::io_context& io_context,
          const std::string& host, const std::string& port);
 
-private:
+ private:
 
 #if RESOLVE_ASYNC
   void ResolveHandler(boost::system::error_code ec,
                       tcp::resolver::results_type results);
 #endif  // RESOLVE_ASYNC
 
+#if USE_GLOBAL_ASYNC_CONNECT
+  void ConnectHandler(boost::system::error_code ec, tcp::endpoint endpoint);
+#else
   void AsyncConnect(tcp::resolver::results_type::iterator endpoint_it);
   void ConnectHandler(boost::system::error_code ec,
                       tcp::resolver::results_type::iterator endpoint_it);
- 
+#endif  // USE_GLOBAL_ASYNC_CONNECT
+
   void AsyncWrite();
   void WriteHandler(boost::system::error_code ec);
 
   void ReadHandler(boost::system::error_code ec, std::size_t length);
 
-private:
   tcp::socket socket_;
 
 #if RESOLVE_ASYNC
-  boost::scoped_ptr<tcp::resolver> resolver_;
+  std::unique_ptr<tcp::resolver> resolver_;
 #endif
 
   tcp::resolver::results_type endpoints_;
@@ -83,13 +89,17 @@ Client::Client(boost::asio::io_context& io_context,
   tcp::resolver resolver(io_context);
 
 #if RESOLVE_IPV4_ONLY
+
   endpoints_ = resolver.resolve(tcp::v4(), host, port);
   // 127.0.0.1:2017, v4
+
 #else
+
   endpoints_ = resolver.resolve(host, port);
   // [::1]:2017, v6
   // 127.0.0.1:2017, v4
-#endif
+
+#endif  // RESOLVE_IPV4_ONLY
 
   utility::PrintEndpoints(std::cout, endpoints_);
 
@@ -107,11 +117,38 @@ void Client::ResolveHandler(boost::system::error_code ec,
     std::cerr << "Resolve: " << ec.message() << std::endl;
   } else {
     endpoints_ = results;
+
+#if USE_GLOBAL_ASYNC_CONNECT
+
+    // ConnectHandler: void(boost::system::error_code, tcp::endpoint)
+    boost::asio::async_connect(socket_, endpoints_,
+                               std::bind(&Client::ConnectHandler, this,
+                                         std::placeholders::_1,
+                                         std::placeholders::_2));
+
+#else
+
     AsyncConnect(endpoints_.begin());
+
+#endif  // USE_GLOBAL_ASYNC_CONNECT
   }
 }
 
 #endif  // RESOLVE_ASYNC
+
+#if USE_GLOBAL_ASYNC_CONNECT
+
+void Client::ConnectHandler(boost::system::error_code ec,
+                            tcp::endpoint endpoint) {
+  if (ec) {
+    std::cout << "Connect failed: " << ec.message() << std::endl;
+    socket_.close();
+  } else {
+    AsyncWrite();
+  }
+}
+
+#else
 
 void Client::AsyncConnect(tcp::resolver::results_type::iterator endpoint_it) {
   if (endpoint_it != endpoints_.end()) {
@@ -137,6 +174,8 @@ void Client::ConnectHandler(boost::system::error_code ec,
     AsyncWrite();
   }
 }
+
+#endif  // USE_GLOBAL_ASYNC_CONNECT
 
 void Client::AsyncWrite() {
   std::size_t len = 0;

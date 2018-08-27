@@ -4,23 +4,17 @@
 #include <iostream>
 
 #define BOOST_ASIO_NO_DEPRECATED
-#if 0
-#include "boost/asio.hpp"
-#else
 #include "boost/asio/connect.hpp"
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/read.hpp"
 #include "boost/asio/write.hpp"
-#endif
 
 using boost::asio::ip::tcp;
 
 #define USE_GLOBAL_READ 0
 
-enum {
-  BUF_SIZE = 1024
-};
+enum { BUF_SIZE = 1024 };
 
 int main(int argc, char* argv[]) {
   if (argc != 3) {
@@ -31,20 +25,20 @@ int main(int argc, char* argv[]) {
   const char* host = argv[1];
   const char* port = argv[2];
 
-  boost::asio::io_context ioc;
+  boost::asio::io_context io_context;
 
   // NOTE:
-  // We don't use output parameter error_code in this example.
+  // Don't use output parameter |error_code| in this example.
   // Using exception handling could largely simplify the source code.
   try {
-    tcp::resolver resolver(ioc);
+    tcp::resolver resolver(io_context);
 
     // Return type: tcp::resolver::results_type
     auto endpoints = resolver.resolve(tcp::v4(), host, port);
 
     // Don't use socket.connect() directly.
-    // Function connect() calls socket.connect() internally.
-    tcp::socket socket(ioc);
+    // Global function connect() calls socket.connect() internally.
+    tcp::socket socket(io_context);
     boost::asio::connect(socket, endpoints);
 
     // Get user input.
@@ -77,6 +71,7 @@ int main(int argc, char* argv[]) {
         boost::asio::buffer(reply, request_length));
 
     std::cout.write(reply, reply_length);
+
 #else
     // Receive reply with socket.read_some().
 
@@ -92,6 +87,7 @@ int main(int argc, char* argv[]) {
         break;
       }
     }
+
 #endif  // USE_GLOBAL_READ
 
     std::cout << std::endl;

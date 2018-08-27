@@ -1,12 +1,14 @@
-#include <iostream>
-#include <string>
+// Synchronous echo server.
+// Create a thread for each incoming connection.
+
 #include <array>
+#include <iostream>
+#include <memory>
+#include <string>
 
 // Use C++11 move semantics for the socket.
-// VS2015+
+// Need 2015 or above for Visual Studio.
 #define USE_MOVE_SEMANTICS 0
-
-#include "boost/shared_ptr.hpp"
 
 #if USE_MOVE_SEMANTICS
 #include <thread>
@@ -19,15 +21,12 @@
 
 using boost::asio::ip::tcp;
 
-// Synchronous echo server.
-// Create a thread for each incoming connection.
-
-#define BUF_SIZE 128
+enum { BUF_SIZE = 128 };
 
 #if USE_MOVE_SEMANTICS
 void Session(tcp::socket socket) {
 #else
-void Session(boost::shared_ptr<tcp::socket>& socket) {
+void Session(std::shared_ptr<tcp::socket>& socket) {
 #endif  // USE_MOVE_SEMANTICS
   try {
     while (true) {
@@ -36,9 +35,9 @@ void Session(boost::shared_ptr<tcp::socket>& socket) {
       boost::system::error_code ec;
 
 #if USE_MOVE_SEMANTICS
-      size_t length = socket.read_some(boost::asio::buffer(data), ec);
+      std::size_t length = socket.read_some(boost::asio::buffer(data), ec);
 #else
-      size_t length = socket->read_some(boost::asio::buffer(data), ec);
+      std::size_t length = socket->read_some(boost::asio::buffer(data), ec);
 #endif
 
       if (ec == boost::asio::error::eof) {
@@ -53,7 +52,7 @@ void Session(boost::shared_ptr<tcp::socket>& socket) {
       boost::asio::write(*socket, boost::asio::buffer(data, length));
 #endif
     }
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     std::cerr << "Exception: " << e.what() << std::endl;
   }
 }
@@ -66,26 +65,31 @@ int main(int argc, char* argv[]) {
 
   unsigned short port = std::atoi(argv[1]);
 
-  boost::asio::io_context ioc;
+  boost::asio::io_context io_context;
 
   // Create an acceptor to listen for new connections.
-  tcp::acceptor acceptor(ioc, tcp::endpoint(tcp::v4(), port));
+  tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), port));
 
   while (true) {
     // Handle each connection in a separate thread.
 
 #if USE_MOVE_SEMANTICS
-    std::thread(Session, acceptor.accept()).detach();
+
+    // The socket object returned from accept will be moved to Session's
+    // parameter without any copy cost.
+    std::thread(&Session, acceptor.accept()).detach();
 
 #else
+
     // Create a socket that will represent the connection to the client.
-    boost::shared_ptr<tcp::socket> socket(new tcp::socket(ioc));
+    std::shared_ptr<tcp::socket> socket(new tcp::socket(io_context));
 
     // Wait for a connection.
     acceptor.accept(*socket);
 
-    boost::thread t(boost::bind(Session, socket));
-#endif
+    boost::thread t(std::bind(&Session, socket));
+
+#endif  // USE_MOVE_SEMANTICS
   }
 
   return 0;

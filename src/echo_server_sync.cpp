@@ -7,6 +7,7 @@
 
 using boost::asio::ip::tcp;
 
+// Pass socket object by reference.
 #define SOCKET_REF 1
 
 enum { BUF_SIZE = 1024 };

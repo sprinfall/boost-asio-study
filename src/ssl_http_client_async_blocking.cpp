@@ -32,7 +32,7 @@ public:
 private:
   bool Connect();
 
-  bool HandShake();
+  bool Handshake();
 
   bool SendRequest();
 
@@ -68,7 +68,7 @@ bool Client::Request() {
     return false;
   }
 
-  if (!HandShake()) {
+  if (!Handshake()) {
     return false;
   }
 
@@ -94,7 +94,7 @@ bool Client::Connect() {
   ec = boost::asio::error::would_block;
 
   // ConnectHandler: void (boost::system::error_code, tcp::endpoint)
-  // Identical to:
+  // Using |boost::lambda::var()| is identical to:
   //   boost::asio::async_connect(
   //       ssl_socket_.lowest_layer(), endpoints,
   //       [this, &ec](boost::system::error_code inner_ec, tcp::endpoint) {
@@ -116,7 +116,7 @@ bool Client::Connect() {
   return true;
 }
 
-bool Client::HandShake() {
+bool Client::Handshake() {
   boost::system::error_code ec = boost::asio::error::would_block;
 
   ssl_socket_.set_verify_mode(ssl::verify_peer);

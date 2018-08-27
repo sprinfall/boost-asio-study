@@ -1,22 +1,18 @@
+// Wait a timer asynchronously.
+// Use a member function as handler.
+
 #include <functional>
 #include <iostream>
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-
 #define BOOST_ASIO_NO_DEPRECATED
-#if 0
-#include "boost/asio.hpp"
-#else
 #include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
-#endif
-
-// Use a member function as handler.
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 class Printer {
-public:
-  Printer(boost::asio::io_context& ioc)
-      : timer_(ioc, boost::posix_time::seconds(1)), count_(0) {
+ public:
+  Printer(boost::asio::io_context& io_context)
+      : timer_(io_context, boost::posix_time::seconds(1)), count_(0) {
   }
 
   ~Printer() {
@@ -24,21 +20,24 @@ public:
   }
 
   void Start() {
+    // For member function handlers, always bind |this| as the first argument.
+    // Unlike global functions, '&' is mandatory for referring to member
+    // function pointers.
     timer_.async_wait(std::bind(&Printer::Print, this, std::placeholders::_1));
   }
 
-private:
+ private:
   void Print(boost::system::error_code ec) {
     if (count_ < 3) {
       std::cout << count_ << std::endl;
       ++count_;
 
       timer_.expires_at(timer_.expires_at() + boost::posix_time::seconds(1));
-      timer_.async_wait(std::bind(&Printer::Print, this, std::placeholders::_1));
+      timer_.async_wait(std::bind(&Printer::Print, this,
+                                  std::placeholders::_1));
     }
   }
 
-private:
   boost::asio::deadline_timer timer_;
   int count_;
 };
