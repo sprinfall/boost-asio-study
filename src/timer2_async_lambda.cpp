@@ -6,10 +6,11 @@
 #define BOOST_ASIO_NO_DEPRECATED
 #include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
+#include "boost/core/ignore_unused.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 
-// Call io_context.run_one() instead.
-#define CALL_RUN_ONE 1
+// Call run_one() instead of run() of io_context.
+#define CALL_RUN_ONE 0
 
 int main() {
   boost::asio::io_context io_context;
@@ -26,13 +27,16 @@ int main() {
   });
 
   // Block until the asynchronous operation has completed.
-  //do {
+  // The do...while loop is optional for this case because we have triggered
+  // only one async operation.
+  do {
     io_context.run_one();
-  //} while (ec == boost::asio::error::would_block);
+  } while (ec == boost::asio::error::would_block);
 
 #else
 
-  timer.async_wait([](boost::system::error_code /*ec*/) {
+  timer.async_wait([](boost::system::error_code ec) {
+    boost::ignore_unused(ec);
     std::cout << "Hello, world!" << std::endl;
   });
 
