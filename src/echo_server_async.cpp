@@ -1,3 +1,5 @@
+// Asynchronous echo server.
+
 #include <array>
 #include <functional>
 #include <iostream>
@@ -5,7 +7,9 @@
 #include <string>
 
 #define BOOST_ASIO_NO_DEPRECATED
+
 #include "boost/asio.hpp"
+#include "boost/core/ignore_unused.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -23,15 +27,14 @@ class Session : public std::enable_shared_from_this<Session> {
   }
 
   void Start() {
-    AsyncRead();
+    DoRead();
   }
 
  private:
-  void AsyncRead() {
+  void DoRead() {
 #if USE_BIND
     socket_.async_read_some(boost::asio::buffer(buffer_),
-                            std::bind(&Session::ReadHandler,
-                                      shared_from_this(),
+                            std::bind(&Session::OnRead, shared_from_this(),
                                       std::placeholders::_1,
                                       std::placeholders::_2));
 #else
@@ -46,12 +49,11 @@ class Session : public std::enable_shared_from_this<Session> {
 #endif  // USE_BIND
   }
 
-  void AsyncWrite(std::size_t length) {
+  void DoWrite(std::size_t length) {
 #if USE_BIND
     boost::asio::async_write(socket_,
                              boost::asio::buffer(buffer_, length),
-                             std::bind(&Session::WriteHandler,
-                                       shared_from_this(),
+                             std::bind(&Session::OnWrite, shared_from_this(),
                                        std::placeholders::_1,
                                        std::placeholders::_2));
 #else
@@ -69,15 +71,17 @@ class Session : public std::enable_shared_from_this<Session> {
   }
 
 #if USE_BIND
-  void ReadHandler(boost::system::error_code ec, std::size_t length) {
+  void OnRead(boost::system::error_code ec, std::size_t length) {
     if (!ec) {
-      AsyncWrite(length);
+      DoWrite(length);
     }
   }
 
-  void WriteHandler(boost::system::error_code ec, std::size_t /*length*/) {
+  void OnWrite(boost::system::error_code ec, std::size_t length) {
+    boost::ignore_unused(length);
+
     if (!ec) {
-      AsyncRead();
+      DoRead();
     }
   }
 #endif  // USE_BIND
@@ -92,17 +96,17 @@ class Server {
  public:
   Server(boost::asio::io_context& io_context, std::uint16_t port)
       : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
-    AsyncAccept();
+    DoAccept();
   }
 
  private:
-  void AsyncAccept() {
+  void DoAccept() {
     acceptor_.async_accept(
         [this](boost::system::error_code ec, tcp::socket socket) {
           if (!ec) {
             std::make_shared<Session>(std::move(socket))->Start();
           }
-          AsyncAccept();
+          DoAccept();
         });
   }
 

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #define BOOST_ASIO_NO_DEPRECATED
+
 #include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -13,7 +14,7 @@
 // now instead of const reference. In some old examples, you may still notice
 // the usage of const reference.
 void Print(boost::system::error_code ec) {
-  std::cout << "Hello, world!" << std::endl;
+  std::cout << "Hello, World!" << std::endl;
 }
 
 int main() {

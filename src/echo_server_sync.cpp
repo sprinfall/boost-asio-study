@@ -1,3 +1,5 @@
+// Synchronous echo server.
+
 #include <array>
 #include <iostream>
 #include <string>
@@ -7,16 +9,9 @@
 
 using boost::asio::ip::tcp;
 
-// Pass socket object by reference.
-#define SOCKET_REF 1
-
 enum { BUF_SIZE = 1024 };
 
-#if SOCKET_REF
-void Session(tcp::socket& socket) {
-#else
-void Session(tcp::socket socket) {  // Better
-#endif  // SOCKET_REF
+void Session(tcp::socket socket) {
   try {
     while (true) {
       std::array<char, BUF_SIZE> data;
@@ -25,7 +20,7 @@ void Session(tcp::socket socket) {  // Better
       std::size_t length = socket.read_some(boost::asio::buffer(data), ec);
 
       if (ec == boost::asio::error::eof) {
-        std::cout << "Connection closed cleanly by peer" << std::endl;
+        std::cout << "Connection closed cleanly by peer." << std::endl;
         break;
       } else if (ec) {
         // Some other error
@@ -55,23 +50,9 @@ int main(int argc, char* argv[]) {
   try {
     // Handle one connection at a time.
     while (true) {
-#if SOCKET_REF
-
-#if 0
-      tcp::socket socket(ioc);
-      acceptor.accept(socket);
-      Session(socket);
-#else
-      tcp::socket socket = acceptor.accept();
-      Session(socket);
-#endif
-
-#else
-
-      // Better
+      // The socket object returned from accept will be moved to Session's
+      // parameter without any copy cost.
       Session(acceptor.accept());
-
-#endif  // SOCKET_REF
     }
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

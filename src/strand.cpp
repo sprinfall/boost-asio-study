@@ -2,6 +2,7 @@
 #include <thread>
 
 #define BOOST_ASIO_NO_DEPRECATED
+
 #include "boost/asio/bind_executor.hpp"
 #include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"

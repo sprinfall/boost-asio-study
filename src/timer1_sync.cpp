@@ -23,7 +23,7 @@ int main() {
   timer.wait();
 
   // 3 seconds later, print hello world.
-  std::cout << "Hello, world!" << std::endl;
+  std::cout << "Hello, World!" << std::endl;
 
   // No need to call io_context.run() since we don't have any asynchronous
   // operations to execute.

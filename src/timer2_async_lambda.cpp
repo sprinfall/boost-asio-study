@@ -4,6 +4,7 @@
 #include <iostream>
 
 #define BOOST_ASIO_NO_DEPRECATED
+
 #include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
 #include "boost/core/ignore_unused.hpp"
@@ -23,7 +24,7 @@ int main() {
 
   timer.async_wait([&ec](boost::system::error_code inner_ec) {
     ec = inner_ec;
-    std::cout << "Hello, world!" << std::endl;
+    std::cout << "Hello, World!" << std::endl;
   });
 
   // Block until the asynchronous operation has completed.
@@ -37,7 +38,7 @@ int main() {
 
   timer.async_wait([](boost::system::error_code ec) {
     boost::ignore_unused(ec);
-    std::cout << "Hello, world!" << std::endl;
+    std::cout << "Hello, World!" << std::endl;
   });
 
   io_context.run();

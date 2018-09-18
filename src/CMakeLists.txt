@@ -18,10 +18,9 @@ add_executable(timer4_memfunc timer4_memfunc.cpp)
 add_executable(strand strand.cpp)
 
 add_executable(echo_server_sync echo_server_sync.cpp)
-add_executable(echo_server_sync_thread echo_server_sync_thread.cpp)
 add_executable(echo_server_async echo_server_async.cpp)
 add_executable(echo_client_sync echo_client_sync.cpp)
-add_executable(echo_client_async echo_client_async.cpp )
+add_executable(echo_client_async echo_client_async.cpp ${UTILITY_SRCS})
 
 if(ENABLE_SSL)
 	add_executable(ssl_http_client_sync ssl_http_client_sync.cpp)
