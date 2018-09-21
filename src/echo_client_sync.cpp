@@ -1,6 +1,7 @@
 // Synchronous echo client.
 
 #include <array>
+#include <cstring>  // for std::strlen
 #include <iostream>
 
 #define BOOST_ASIO_NO_DEPRECATED
@@ -49,7 +50,7 @@ int main(int argc, char* argv[]) {
     do {
       std::cout << "Enter message: ";
       std::cin.getline(request, BUF_SIZE);
-      request_length = strlen(request);
+      request_length = std::strlen(request);
     } while (request_length == 0);
 
     // Write to the socket.

@@ -15,7 +15,7 @@
 using boost::asio::ip::tcp;
 
 // Use async_resolve() or not.
-#define RESOLVE_ASYNC 0
+#define RESOLVE_ASYNC 1
 
 // Only resolve IPv4.
 #define RESOLVE_IPV4_ONLY 1
@@ -44,7 +44,7 @@ class Client {
   tcp::socket socket_;
 
 #if RESOLVE_ASYNC
-  std::unique_ptr<tcp::resolver> resolver_;
+  tcp::resolver resolver_;
 #endif
 
   enum { BUF_SIZE = 1024 };
@@ -59,16 +59,18 @@ class Client {
 
 Client::Client(boost::asio::io_context& io_context,
                const std::string& host, const std::string& port)
-    : socket_(io_context) {
+#if RESOLVE_ASYNC
+  : socket_(io_context), resolver_(io_context) {
+#else
+  : socket_(io_context) {
+#endif
 
 #if RESOLVE_ASYNC
 
-  resolver_.reset(new tcp::resolver(io_context));
-
-  resolver_->async_resolve(tcp::v4(), host, port,
-                           std::bind(&Client::OnResolve, this,
-                                     std::placeholders::_1,
-                                     std::placeholders::_2));
+  resolver_.async_resolve(tcp::v4(), host, port,
+                          std::bind(&Client::OnResolve, this,
+                                    std::placeholders::_1,
+                                    std::placeholders::_2));
 
 #else
 
