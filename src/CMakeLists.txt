@@ -33,3 +33,7 @@ if(ENABLE_SSL)
 	target_link_libraries(ssl_http_client_async_blocking ${SSL_LIBS})
 	target_link_libraries(ssl_http_client_async_blocking_timeout ${SSL_LIBS})
 endif()
+
+if(ENABLE_QT)
+	add_subdirectory(qt_client_async)
+endif()

@@ -9,6 +9,7 @@ endif()
 project(boost_asio_study)
 
 option(ENABLE_SSL "Enable SSL/HTTPS examples (need OpenSSL)?" ON)
+option(ENABLE_QT "Enable Qt examples?" OFF)
 
 # C++ standard requirements.
 set(CMAKE_CXX_STANDARD 11)
