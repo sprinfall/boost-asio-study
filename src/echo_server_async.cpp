@@ -34,7 +34,7 @@ class Session : public std::enable_shared_from_this<Session> {
   void DoRead() {
 #if USE_BIND
     socket_.async_read_some(boost::asio::buffer(buffer_),
-                            std::bind(&Session::OnRead, shared_from_this(),
+                            std::bind(&Session::OnRead, this,
                                       std::placeholders::_1,
                                       std::placeholders::_2));
 #else
@@ -53,7 +53,7 @@ class Session : public std::enable_shared_from_this<Session> {
 #if USE_BIND
     boost::asio::async_write(socket_,
                              boost::asio::buffer(buffer_, length),
-                             std::bind(&Session::OnWrite, shared_from_this(),
+                             std::bind(&Session::OnWrite, this,
                                        std::placeholders::_1,
                                        std::placeholders::_2));
 #else
