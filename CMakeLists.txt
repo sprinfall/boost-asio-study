@@ -43,9 +43,18 @@ if(WIN32)
 	add_definitions(-D_WIN32_WINNT=${ver})
 endif(WIN32)
 
+# CMake 3.1.0+ required.
+# See: https://stackoverflow.com/a/29871891
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.66.0 REQUIRED)
+if(WIN32)
+    find_package(Boost 1.66.0 REQUIRED)
+else()
+    find_package(Boost 1.66.0 REQUIRED COMPONENTS system filesystem)
+endif()
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})
@@ -57,6 +66,7 @@ if(ENABLE_SSL)
 	find_package(OpenSSL)
 	if(OPENSSL_FOUND)
 		include_directories(${OPENSSL_INCLUDE_DIR})
+		message(STATUS "OpenSSL libs: " ${OPENSSL_LIBRARIES})
 	endif()
 endif()
 

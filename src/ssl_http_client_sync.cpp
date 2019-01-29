@@ -77,6 +77,9 @@ int main(int argc, char* argv[]) {
     // are often available through the ca-certificates package, and the
     // certificates are installed to locations that set_default_verify_paths()
     // will find.
+    // Run the following command on Linux for the package information:
+    //   $ aptitude search ca-certifi*
+    // See also: https://serverfault.com/questions/62496/ssl-certificate-location-on-unix-linux
     // On Windows, you have to set environment variable SSL_CERT_FILE properly.
     ssl_context.set_default_verify_paths();
 
