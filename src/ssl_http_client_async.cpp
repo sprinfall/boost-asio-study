@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#define BOOST_ASIO_NO_DEPRECATED
 #include "boost/asio.hpp"
 #include "boost/asio/ssl.hpp"
 
@@ -15,6 +14,9 @@ using boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
 
 typedef ssl::stream<tcp::socket> ssl_socket;
+
+// Verify the certificate of the peer (remote host).
+#define SSL_VERIFY 0
 
 // -----------------------------------------------------------------------------
 
@@ -81,7 +83,11 @@ void Client::ConnectHandler(boost::system::error_code ec, tcp::endpoint) {
   if (ec) {
     std::cout << "Connect failed: " << ec.message() << std::endl;
   } else {
+#if SSL_VERIFY
     ssl_socket_.set_verify_mode(ssl::verify_peer);
+#else
+    ssl_socket_.set_verify_mode(ssl::verify_none);
+#endif  // SSL_VERIFY
 
     ssl_socket_.set_verify_callback(ssl::rfc2818_verification(host_));
 

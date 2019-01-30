@@ -4,7 +4,6 @@
 #include <iostream>
 #include <string>
 
-#define BOOST_ASIO_NO_DEPRECATED
 #include "boost/asio.hpp"
 
 using boost::asio::ip::tcp;

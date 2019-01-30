@@ -5,12 +5,14 @@
 #include <iostream>
 #include <string>
 
-#define BOOST_ASIO_NO_DEPRECATED
 #include "boost/asio.hpp"
 #include "boost/asio/ssl.hpp"
 
 using boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
+
+// Verify the certificate of the peer (remote host).
+#define SSL_VERIFY 0
 
 #define VERBOSE_VERIFICATION 1
 
@@ -91,15 +93,20 @@ int main(int argc, char* argv[]) {
     ssl::stream<tcp::socket> ssl_socket(io_context, ssl_context);
     boost::asio::connect(ssl_socket.lowest_layer(), endpoints);
 
+#if SSL_VERIFY
     // Perform SSL handshake and verify the remote host's certificate.
     ssl_socket.set_verify_mode(ssl::verify_peer);
 
+#else
+    ssl_socket.set_verify_mode(ssl::verify_none);
+#endif  // SSL_VERIFY
+
 #if VERBOSE_VERIFICATION
     ssl_socket.set_verify_callback(
-        MakeVerboseVerification(ssl::rfc2818_verification(host)));
+      MakeVerboseVerification(ssl::rfc2818_verification(host)));
 #else
     ssl_socket.set_verify_callback(ssl::rfc2818_verification(host));
-#endif
+#endif  // VERBOSE_VERIFICATION
 
     ssl_socket.handshake(ssl::stream_base::client);
 
@@ -125,7 +132,7 @@ int main(int argc, char* argv[]) {
     // TODO: Continue to read until the end.
 
   } catch (const std::exception& e) {
-    std::cout << "Exception: " << e.what() << "\n";
+    std::cout << "Exception: " << e.what() << std::endl;
   }
 
   return 0;

@@ -4,8 +4,6 @@
 #include <functional>
 #include <iostream>
 
-#define BOOST_ASIO_NO_DEPRECATED
-
 #include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"

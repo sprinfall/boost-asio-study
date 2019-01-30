@@ -2,9 +2,6 @@
 
 #include <iostream>
 
-// Don't use any deprecated definitions (e.g., io_service).
-#define BOOST_ASIO_NO_DEPRECATED
-
 // Including "boost/asio.hpp" directly might simplify a lot but also introduce
 // many unnecessary header files. You should never include "boost/asio.hpp" in
 // your own header files. Try to include as less as possible.

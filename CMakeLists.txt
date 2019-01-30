@@ -16,6 +16,13 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Don't use any deprecated definitions (e.g., io_service).
+add_definitions(-DBOOST_ASIO_NO_DEPRECATED)
+
+if(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 # See: https://stackoverflow.com/a/40217291
 if(WIN32)
 	macro(get_WIN32_WINNT version)

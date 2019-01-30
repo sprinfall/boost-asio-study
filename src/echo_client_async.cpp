@@ -6,8 +6,6 @@
 #include <memory>
 #include <string>
 
-#define BOOST_ASIO_NO_DEPRECATED
-
 #include "boost/asio.hpp"
 
 #include "utility.h"  // for printing endpoints

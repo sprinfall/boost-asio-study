@@ -4,8 +4,6 @@
 #include <cstring>  // for std::strlen
 #include <iostream>
 
-#define BOOST_ASIO_NO_DEPRECATED
-
 #include "boost/asio/connect.hpp"
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
