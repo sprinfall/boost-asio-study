@@ -58,9 +58,9 @@ class Client {
 Client::Client(boost::asio::io_context& io_context,
                const std::string& host, const std::string& port)
 #if RESOLVE_ASYNC
-  : socket_(io_context), resolver_(io_context) {
+    : socket_(io_context), resolver_(io_context) {
 #else
-  : socket_(io_context) {
+    : socket_(io_context) {
 #endif
 
 #if RESOLVE_ASYNC

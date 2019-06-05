@@ -1,17 +1,17 @@
 // Wait a timer asynchronously.
 // Use a member function as handler.
 
+#include <chrono>
 #include <functional>
 #include <iostream>
 
-#include "boost/asio/deadline_timer.hpp"
+#include "boost/asio/steady_timer.hpp"
 #include "boost/asio/io_context.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
 
 class Printer {
  public:
   Printer(boost::asio::io_context& io_context)
-      : timer_(io_context, boost::posix_time::seconds(1)), count_(0) {
+      : timer_(io_context, std::chrono::seconds(1)), count_(0) {
   }
 
   ~Printer() {
@@ -31,13 +31,13 @@ class Printer {
       std::cout << count_ << std::endl;
       ++count_;
 
-      timer_.expires_at(timer_.expires_at() + boost::posix_time::seconds(1));
+      timer_.expires_after(std::chrono::seconds(1));
       timer_.async_wait(std::bind(&Printer::Print, this,
                                   std::placeholders::_1));
     }
   }
 
-  boost::asio::deadline_timer timer_;
+  boost::asio::steady_timer timer_;
   int count_;
 };
 

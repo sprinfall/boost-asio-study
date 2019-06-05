@@ -55,12 +55,13 @@ endif(WIN32)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
+# Boost 1.66+ required.
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 if(WIN32)
-    find_package(Boost 1.66.0 REQUIRED)
+    find_package(Boost REQUIRED)
 else()
-    find_package(Boost 1.66.0 REQUIRED COMPONENTS system filesystem)
+    find_package(Boost REQUIRED COMPONENTS system filesystem date_time regex)
 endif()
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
@@ -68,8 +69,10 @@ if(Boost_FOUND)
 endif()
 
 if(ENABLE_SSL)
-	set(OPENSSL_USE_STATIC_LIBS ON)
-	set(OPENSSL_MSVC_STATIC_RT ON)
+	# Commented on 20190605.
+    # The static libs have linkage issues with VS2015 on Win10.
+    # set(OPENSSL_USE_STATIC_LIBS ON)
+    # set(OPENSSL_MSVC_STATIC_RT ON)
 	find_package(OpenSSL)
 	if(OPENSSL_FOUND)
 		include_directories(${OPENSSL_INCLUDE_DIR})

@@ -1,14 +1,13 @@
+#include <chrono>
 #include <iostream>
 #include <thread>
 
 #include "boost/asio/bind_executor.hpp"
-#include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
+#include "boost/asio/steady_timer.hpp"
 #include "boost/asio/strand.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
 
 using boost::asio::bind_executor;
-using boost::posix_time::seconds;
 
 // Synchronise callback handlers in a multithreaded program.
 // Class strand provides the ability to post and dispatch handlers with the
@@ -18,8 +17,8 @@ class Printer {
 public:
   Printer(boost::asio::io_context& io_context)
       : strand_(io_context),
-        timer1_(io_context, seconds(1)),
-        timer2_(io_context, seconds(1)),
+        timer1_(io_context, std::chrono::seconds(1)),
+        timer2_(io_context, std::chrono::seconds(1)),
         count_(0) {
     timer1_.async_wait(bind_executor(strand_, std::bind(&Printer::Print1, this)));
     timer2_.async_wait(bind_executor(strand_, std::bind(&Printer::Print2, this)));
@@ -34,7 +33,7 @@ public:
       std::cout << "Timer 1: " << count_ << std::endl;
       ++count_;
 
-      timer1_.expires_at(timer1_.expires_at() + seconds(1));
+      timer1_.expires_after(std::chrono::seconds(1));
       timer1_.async_wait(bind_executor(strand_, std::bind(&Printer::Print1, this)));
     }
   } 
@@ -44,15 +43,15 @@ public:
       std::cout << "Timer 2: " << count_ << std::endl;
       ++count_;
 
-      timer2_.expires_at(timer2_.expires_at() + seconds(1));
+      timer2_.expires_after(std::chrono::seconds(1));
       timer2_.async_wait(bind_executor(strand_, std::bind(&Printer::Print2, this)));
     }
   }
 
 private:
   boost::asio::io_context::strand strand_;
-  boost::asio::deadline_timer timer1_;
-  boost::asio::deadline_timer timer2_;
+  boost::asio::steady_timer timer1_;
+  boost::asio::steady_timer timer2_;
   int count_;
 };
 

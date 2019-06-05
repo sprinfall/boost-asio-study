@@ -2,12 +2,13 @@
 // Based on Asio asynchronous APIs but run in blocking mode.
 // A deadline timer is added for timeout control.
 
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "boost/asio.hpp"
-#include "boost/asio/deadline_timer.hpp"
+#include "boost/asio/steady_timer.hpp"
 #include "boost/asio/ssl.hpp"
 #include "boost/lambda/bind.hpp"
 #include "boost/lambda/lambda.hpp"
@@ -26,7 +27,7 @@ typedef ssl::stream<tcp::socket> ssl_socket;
 const int kMaxConnectSeconds = 10;
 const int kMaxHandshakeSeconds = 10;
 const int kMaxSendSeconds = 30;
-const int kMaxReceiveSeconds = 30;
+const int kMaxReceiveSeconds = 5;
 
 // -----------------------------------------------------------------------------
 
@@ -68,7 +69,7 @@ private:
 
   std::vector<char> buffer_;
 
-  boost::asio::deadline_timer deadline_;
+  boost::asio::steady_timer deadline_;
 
   // Maximum seconds to wait before the client cancels the operation.
   // Only for receiving response from server.
@@ -100,7 +101,7 @@ bool Client::Request() {
   timed_out_ = false;
 
   // Start the persistent actor that checks for deadline expiry.
-  deadline_.expires_at(boost::posix_time::pos_infin);
+  deadline_.expires_at(boost::asio::steady_timer::time_point::max());
   CheckDeadline();
 
   if (!Connect()) {
@@ -139,7 +140,7 @@ bool Client::Connect() {
     return false;
   }
 
-  deadline_.expires_from_now(boost::posix_time::seconds(kMaxConnectSeconds));
+  deadline_.expires_after(std::chrono::seconds(kMaxConnectSeconds));
 
   ec = boost::asio::error::would_block;
 
@@ -180,7 +181,7 @@ bool Client::Connect() {
 }
 
 bool Client::Handshake() {
-  deadline_.expires_from_now(boost::posix_time::seconds(kMaxHandshakeSeconds));
+  deadline_.expires_after(std::chrono::seconds(kMaxHandshakeSeconds));
 
   boost::system::error_code ec = boost::asio::error::would_block;
 
@@ -221,7 +222,7 @@ bool Client::SendRequest() {
   request_stream << "GET " << path_ << " HTTP/1.1\r\n";
   request_stream << "Host: " << host_ << "\r\n\r\n";
 
-  deadline_.expires_from_now(boost::posix_time::seconds(kMaxSendSeconds));
+  deadline_.expires_after(std::chrono::seconds(kMaxSendSeconds));
 
   boost::system::error_code ec = boost::asio::error::would_block;
 
@@ -244,7 +245,7 @@ bool Client::SendRequest() {
 }
 
 bool Client::ReadResponse() {
-  deadline_.expires_from_now(boost::posix_time::seconds(kMaxSendSeconds));
+  deadline_.expires_after(std::chrono::seconds(kMaxReceiveSeconds));
 
   boost::system::error_code ec = boost::asio::error::would_block;
 
@@ -261,6 +262,7 @@ bool Client::ReadResponse() {
         std::cout.write(buffer_.data(), length);
 
         // TODO: Call ReadResponse() to read until the end.
+        ReadResponse();
       });
 
   // Block until the asynchronous operation has completed.
@@ -281,8 +283,7 @@ void Client::CheckDeadline() {
     return;
   }
 
-  if (deadline_.expires_at() <=
-      boost::asio::deadline_timer::traits_type::now()) {
+  if (deadline_.expiry() <= boost::asio::steady_timer::clock_type::now()) {
     // The deadline has passed.
     // The socket is closed so that any outstanding asynchronous operations
     // are canceled.

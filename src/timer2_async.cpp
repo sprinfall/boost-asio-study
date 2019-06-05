@@ -1,10 +1,10 @@
 // Wait a timer asynchronously.
 
+#include <chrono>
 #include <iostream>
 
-#include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/asio/steady_timer.hpp"
 
 // Handler to be called when the asynchronous wait finishes.
 // NOTE:
@@ -18,7 +18,7 @@ void Print(boost::system::error_code ec) {
 int main() {
   boost::asio::io_context io_context;
 
-  boost::asio::deadline_timer timer(io_context, boost::posix_time::seconds(3));
+  boost::asio::steady_timer timer(io_context, std::chrono::seconds(3));
 
   timer.async_wait(&Print);
 

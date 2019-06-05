@@ -68,14 +68,14 @@ void Print(boost::system::error_code ec) {
 
 int main() {
   boost::asio::io_context ioc;
-  boost::asio::deadline_timer timer(ioc, boost::posix_time::seconds(3));
+  boost::asio::steady_timer timer(ioc, std::chrono::seconds(3));
   timer.async_wait(&Print);
   ioc.run();
   return 0;
 }
 ```
 
-先创建一个 `deadline_timer`，指定时间 3 秒，然后异步等待这个 timer，3 秒后，timer 超时结束，`Print` 被调用。
+先创建一个 `steady_timer`，指定时间 3 秒，然后异步等待这个 timer，3 秒后，timer 超时结束，`Print` 被调用。
 
 以下几点需要注意：
 - 所有 I/O 对象都依赖 `io_context`，一般在构造时指定。
@@ -88,13 +88,13 @@ int main() {
 
 ```cpp
 void Print(boost::system::error_code ec,
-           boost::asio::deadline_timer* timer,
+           boost::asio::steady_timer* timer,
            int* count) {
   if (*count < 3) {
     std::cout << *count << std::endl;
     ++(*count);
 
-    timer->expires_at(timer->expires_at() + boost::posix_time::seconds(1));
+    timer->expires_after(std::chrono::seconds(1));
     
     timer->async_wait(std::bind(&Print, std::placeholders::_1, timer, count));
   }
@@ -104,7 +104,7 @@ void Print(boost::system::error_code ec,
 ```cpp
 int main() {
   boost::asio::io_context ioc;
-  boost::asio::deadline_timer timer(ioc, boost::posix_time::seconds(1));
+  boost::asio::steady_timer timer(ioc, std::chrono::seconds(1));
   int count = 0;
   timer.async_wait(std::bind(&Print, std::placeholders::_1, &timer, &count));
 
