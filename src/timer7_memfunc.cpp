@@ -23,7 +23,7 @@ class Printer {
   }
 
  private:
-  void Print(const boost::system::error_code& ec) {
+  void Print(boost::system::error_code ec) {
     if (count_ < 3) {
       std::cout << count_ << std::endl;
       ++count_;

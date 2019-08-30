@@ -164,6 +164,9 @@ void Client::OnRead(boost::system::error_code ec, std::size_t length) {
     std::cout.write(buf_.data(), length);
     std::cout << std::endl;
   }
+
+  // Optionally, continue to write.
+  // DoWrite();
 }
 
 // -----------------------------------------------------------------------------

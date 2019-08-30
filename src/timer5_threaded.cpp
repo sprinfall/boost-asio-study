@@ -22,7 +22,7 @@ int main() {
   boost::asio::io_context io_context;
 
   boost::asio::steady_timer timer1{ io_context, std::chrono::seconds(3) };
-  boost::asio::steady_timer timer2{ io_context, std::chrono::seconds(3) };
+  boost::asio::steady_timer timer2{ io_context, std::chrono::seconds(1) };
 
   timer1.async_wait(&Print);
   timer2.async_wait(&Print);
