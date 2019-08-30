@@ -18,8 +18,11 @@ set(TARGETS
     hello
     timer1_sync
     timer2_async
-    timer3_args
-    timer4_memfunc
+    timer3_lambda
+    timer4_multi
+    timer5_threaded
+    timer6_args
+    timer7_memfunc
     strand
     echo_server_sync
     echo_server_async

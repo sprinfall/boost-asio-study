@@ -37,6 +37,7 @@ class Session : public std::enable_shared_from_this<Session> {
                                       std::placeholders::_2));
 #else
     auto self(shared_from_this());
+
     socket_.async_read_some(
         boost::asio::buffer(buffer_),
         [this, self](boost::system::error_code ec, std::size_t length) {
@@ -123,7 +124,7 @@ int main(int argc, char* argv[]) {
 
   boost::asio::io_context io_context;
 
-  Server server(io_context, port);
+  Server server{ io_context, port };
 
   io_context.run();
 

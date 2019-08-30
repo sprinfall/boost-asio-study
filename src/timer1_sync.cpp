@@ -12,7 +12,7 @@
 int main() {
   boost::asio::io_context io_context;
 
-  boost::asio::steady_timer timer(io_context, std::chrono::seconds(3));
+  boost::asio::steady_timer timer{ io_context, std::chrono::seconds(3) };
 
   // All asynchronous APIs in Asio start with a prefix "async_".
   // Here we just call a synchronous API which will block until the timer

@@ -37,7 +37,8 @@ void Print(boost::system::error_code ec,
 int main() {
   boost::asio::io_context io_context;
 
-  boost::asio::steady_timer timer(io_context, std::chrono::seconds(1));
+  boost::asio::steady_timer timer{ io_context, std::chrono::seconds(1) };
+
   int count = 0;
 
   // async_wait() expects a handler function (or function object) with the

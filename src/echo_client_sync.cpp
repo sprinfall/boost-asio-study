@@ -12,7 +12,7 @@
 
 using boost::asio::ip::tcp;
 
-#define USE_GLOBAL_READ 0
+#define USE_GLOBAL_READ 1
 
 enum { BUF_SIZE = 1024 };
 
@@ -31,14 +31,14 @@ int main(int argc, char* argv[]) {
   // Don't use output parameter |error_code| in this example.
   // Using exception handling could largely simplify the source code.
   try {
-    tcp::resolver resolver(io_context);
+    tcp::resolver resolver{ io_context };
 
     // Return type: tcp::resolver::results_type
     auto endpoints = resolver.resolve(tcp::v4(), host, port);
 
     // Don't use socket.connect() directly.
     // Global function connect() calls socket.connect() internally.
-    tcp::socket socket(io_context);
+    tcp::socket socket{ io_context };
     boost::asio::connect(socket, endpoints);
 
     // Get user input.
@@ -67,8 +67,7 @@ int main(int argc, char* argv[]) {
     // Global read() returns once the specified size of buffer has been
     // fully filled.
     std::size_t reply_length = boost::asio::read(
-        socket,
-        boost::asio::buffer(reply, request_length));
+        socket, boost::asio::buffer(reply, request_length));
 
     std::cout.write(reply, reply_length);
 

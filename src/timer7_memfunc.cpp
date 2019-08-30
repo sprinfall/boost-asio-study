@@ -10,28 +10,26 @@
 
 class Printer {
  public:
-  Printer(boost::asio::io_context& io_context)
+  explicit Printer(boost::asio::io_context& io_context)
       : timer_(io_context, std::chrono::seconds(1)), count_(0) {
-  }
-
-  ~Printer() {
-    std::cout << "Final count is " << count_ << std::endl;
-  }
-
-  void Start() {
     // For member function handlers, always bind |this| as the first argument.
     // Unlike global functions, '&' is mandatory for referring to member
     // function pointers.
     timer_.async_wait(std::bind(&Printer::Print, this, std::placeholders::_1));
   }
 
+  ~Printer() {
+    std::cout << "Final count is " << count_ << std::endl;
+  }
+
  private:
-  void Print(boost::system::error_code ec) {
+  void Print(const boost::system::error_code& ec) {
     if (count_ < 3) {
       std::cout << count_ << std::endl;
       ++count_;
 
       timer_.expires_after(std::chrono::seconds(1));
+
       timer_.async_wait(std::bind(&Printer::Print, this,
                                   std::placeholders::_1));
     }
@@ -44,8 +42,7 @@ class Printer {
 int main() {
   boost::asio::io_context io_context;
 
-  Printer printer(io_context);
-  printer.Start();
+  Printer printer{ io_context };
 
   io_context.run();
 

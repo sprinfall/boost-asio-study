@@ -1,14 +1,12 @@
 // Wait a timer asynchronously.
 // Use a lambda as the wait handler.
 
+#include <chrono>
 #include <iostream>
 
-#define BOOST_ASIO_NO_DEPRECATED
-
-#include "boost/asio/deadline_timer.hpp"
 #include "boost/asio/io_context.hpp"
+#include "boost/asio/steady_timer.hpp"
 #include "boost/core/ignore_unused.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
 
 // Call run_one() instead of run() of io_context.
 #define CALL_RUN_ONE 0
@@ -16,7 +14,7 @@
 int main() {
   boost::asio::io_context io_context;
 
-  boost::asio::deadline_timer timer(io_context, boost::posix_time::seconds(3));
+  boost::asio::steady_timer timer{ io_context, std::chrono::seconds(3) };
 
 #if CALL_RUN_ONE
 
@@ -30,6 +28,7 @@ int main() {
   // Block until the asynchronous operation has completed.
   // The do...while loop is optional for this case because we have triggered
   // only one async operation.
+  // TODO: Trigger another asynchronous operation from within the handler.
   do {
     io_context.run_one();
   } while (ec == boost::asio::error::would_block);

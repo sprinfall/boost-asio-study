@@ -7,7 +7,6 @@
 #include "boost/asio/steady_timer.hpp"
 
 // Handler to be called when the asynchronous wait finishes.
-// NOTE:
 // The |error_code| parameter for all handlers in Asio is passed by value
 // now instead of const reference. In some old examples, you may still notice
 // the usage of const reference.
@@ -18,7 +17,7 @@ void Print(boost::system::error_code ec) {
 int main() {
   boost::asio::io_context io_context;
 
-  boost::asio::steady_timer timer(io_context, std::chrono::seconds(3));
+  boost::asio::steady_timer timer{ io_context, std::chrono::seconds(3) };
 
   timer.async_wait(&Print);
 
