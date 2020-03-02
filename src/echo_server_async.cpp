@@ -73,6 +73,16 @@ class Session : public std::enable_shared_from_this<Session> {
   void OnRead(boost::system::error_code ec, std::size_t length) {
     if (!ec) {
       DoWrite(length);
+    } else {
+      if (ec == boost::asio::error::eof) {
+        std::cerr << "Socket read EOF: " << ec.message() << std::endl;
+      } else if (ec == boost::asio::error::operation_aborted) {
+        // The socket of this connection has been closed.
+        // This happens, e.g., when the server was stopped by a signal (Ctrl-C).
+        std::cerr << "Socket operation aborted: " << ec.message() << std::endl;
+      } else {
+        std::cerr << "Socket read error: " << ec.message() << std::endl;
+      }
     }
   }
 

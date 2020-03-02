@@ -11,44 +11,35 @@ project(boost_asio_study)
 option(ENABLE_SSL "Enable SSL/HTTPS examples (need OpenSSL)?" ON)
 option(ENABLE_QT "Enable Qt examples?" OFF)
 
+# Output directories
+set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BUILD_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BUILD_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${BUILD_DIR}/bin/debug)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${BUILD_DIR}/bin/debug)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${BUILD_DIR}/bin/debug)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${BUILD_DIR}/bin/release)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${BUILD_DIR}/bin/release)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${BUILD_DIR}/bin/release)
+
 # C++ standard requirements.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Don't use any deprecated definitions (e.g., io_service).
-add_definitions(-DBOOST_ASIO_NO_DEPRECATED)
-
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
-# See: https://stackoverflow.com/a/40217291
-if(WIN32)
-	macro(get_WIN32_WINNT version)
-		if(CMAKE_SYSTEM_VERSION)
-			set(ver ${CMAKE_SYSTEM_VERSION})
-			string(REGEX MATCH "^([0-9]+).([0-9])" ver ${ver})
-			string(REGEX MATCH "^([0-9]+)" verMajor ${ver})
-			# Check for Windows 10, b/c we'll need to convert to hex 'A'.
-			if("${verMajor}" MATCHES "10")
-				set(verMajor "A")
-				string(REGEX REPLACE "^([0-9]+)" ${verMajor} ver ${ver})
-			endif("${verMajor}" MATCHES "10")
-			# Remove all remaining '.' characters.
-			string(REPLACE "." "" ver ${ver})
-			# Prepend each digit with a zero.
-			string(REGEX REPLACE "([0-9A-Z])" "0\\1" ver ${ver})
-			set(${version} "0x${ver}")
-		endif(CMAKE_SYSTEM_VERSION)
-	endmacro(get_WIN32_WINNT)
+# Don't use any deprecated definitions (e.g., io_service).
+add_definitions(-DBOOST_ASIO_NO_DEPRECATED)
 
-	get_WIN32_WINNT(ver)
-	# E.g., 0x0601 for Win7.
-	message(STATUS "_WIN32_WINNT=${ver}")
-    # Asio needs this!
-	add_definitions(-D_WIN32_WINNT=${ver})
-endif(WIN32)
+if(WIN32)
+	# Asio needs this!
+    # 0x0601 means Win7. So our application targets Win7 and above.
+    add_definitions(-D_WIN32_WINNT=0x0601)
+endif()
 
 # CMake 3.1.0+ required.
 # See: https://stackoverflow.com/a/29871891

@@ -165,6 +165,37 @@ void Client::OnRead(boost::system::error_code ec, std::size_t length) {
     std::cout << std::endl;
   }
 
+  // Pause, please press any key to continue.
+  getchar();
+
+  std::cout << "Shutdown socket..." << std::endl;
+
+  // Initiate graceful connection closure.
+  // Socket close VS. shutdown:
+  //   https://stackoverflow.com/questions/4160347/close-vs-shutdown-socket
+  boost::system::error_code ec2;
+  socket_.shutdown(tcp::socket::shutdown_both, ec2);
+ 
+  // shutdown() with `shutdown_both` or `shutdown_send` signals EOF to the peer.
+  // It means that the peer will read an EOF.
+
+  if (ec2) {
+    std::cerr << "Socket shutdown error: " << ec2.message() << std::endl;
+    ec2.clear();
+    // Don't return, try to close the socket anywhere.
+  }
+
+  // Pause, please press any key to continue.
+  getchar();
+
+  std::cout << "Close socket..." << std::endl;
+
+  socket_.close(ec2);
+
+  if (ec2) {
+    std::cerr << "Socket close error: " << ec2.message() << std::endl;
+  }
+
   // Optionally, continue to write.
   // DoWrite();
 }
