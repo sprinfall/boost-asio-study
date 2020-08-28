@@ -20,12 +20,12 @@
 ## \_WIN32_WINNT Warning
 
 在 Windows 平台，编译时会遇到关于 `_WIN32_WINNT` 的警告。
-可以说，这是 Asio 自身的问题。
-它应该在某个地方包含 `SDKDDKVer.h`。
-不应该让用户自己去定义平台的版本。
 
-如果你用 CMake，可以借助下面这个宏自动检测 `_WIN32_WINNT`：
-(详见：https://stackoverflow.com/a/40217291/6825348)
+~~可以说，这是 Asio 自身的问题。它应该在某个地方包含 `SDKDDKVer.h`。不应该让用户自己去定义平台的版本。~~
+
+~~如果你用 CMake，可以借助下面这个宏自动检测 `_WIN32_WINNT`：
+(详见：https://stackoverflow.com/a/40217291/6825348)~~
+
 ```cmake
 if (WIN32)
     macro(get_WIN32_WINNT version)
@@ -50,6 +50,15 @@ if (WIN32)
     add_definitions(-D_WIN32_WINNT=${ver})
 endif(WIN32)
 ```
+2020-08-28：上面的描述是错的！Asio 需要你定义 `_WIN32_WINNT`，是指你想支持的最低 Windows 版本。所以只需在 CMake 里这样写就可以了：
+
+```cmake
+if(WIN32)
+	# Asio needs this!
+    # 0x0601 means Win7. So our application targets Win7 and above.
+    add_definitions(-D_WIN32_WINNT=0x0601)
+endif()
+```
 
 ## 尽量少包含头文件
 
@@ -63,6 +72,7 @@ endif(WIN32)
 虽然关于 Handler 的签名，文档里都有说明，但是直接定位到源码，更方便，也更精确。
 
 以 `steady_timer.async_wait()` 为例，在 IDE 里定位到 `async_wait()` 的定义，代码（片段）如下：
+
 ```cpp
   template <typename WaitHandler>
   BOOST_ASIO_INITFN_RESULT_TYPE(WaitHandler,
@@ -80,6 +90,7 @@ endif(WIN32)
 前面在说 Handler 签名时，已经看到 `BOOST_ASIO_INITFN_RESULT_TYPE` 这个宏的提示作用，翻一翻 Asio 源码，`error_code` 其实都已经传值了。
 
 奇怪的是，即使你的 Handler 传 `error_code` 为引用，编译运行也都没有问题。
+
 ```cpp
 void Print(const boost::system::error_code& ec) {
   std::cout << "Hello, world!" << std::endl;
@@ -123,15 +134,18 @@ private:
 ## Bind 占位符
 
 调用 `bind` 时，使用了占位符（placeholder），其实下面四种写法都可以：
+
 ```cpp
 boost::bind(Print, boost::asio::placeholders::error, &timer, &count)
 boost::bind(Print, boost::placeholders::_1, &timer, &count);
 boost::bind(Print, _1, &timer, &count);
 std::bind(Print, std::placeholders::_1, &timer, &count);
 ```
+
 第一种，占位符是 Boost Asio 定义的。
 第二种，占位符是 Boost Bind 定义的。
 第三种，同第二种，之所以可行，是因为 `boost/bind.hpp` 里有一句 `using namespace boost::placeholders;`。
+
 ```cpp
 // boost/bind.hpp
 #include <boost/bind/bind.hpp>
@@ -141,9 +155,11 @@ std::bind(Print, std::placeholders::_1, &timer, &count);
 using namespace boost::placeholders;
 ...
 ```
+
 第四种，STL Bind，类似于 Boost Bind，只是没有声明 `using namespace std::placeholders;`。
 
 四种写法，推荐使用二或四。至于是用 Boost Bind 还是 STL Bind，没那么重要。
+
 此外，数字占位符共有 9 个，`_1` - `_9`。
 
 ## Endpoint 是一个单词
@@ -154,12 +170,15 @@ using namespace boost::placeholders;
 ## Server 也可以用 Resolver
 
 TCP Server 的 acceptor 一般是这样构造的：
+
 ```cpp
 tcp::acceptor(io_context, tcp::endpoint(tcp::v4(), port))
 ```
+
 也就是说，指定 protocol (`tcp::v4()`) 和 port 就行了。
 
 但是，Asio 的 http 这个例子，确实用了 resolver，根据 IP 地址 resolve 出 endpoint：
+
 ```cpp
   tcp::resolver resolver(io_context_);
 
@@ -176,12 +195,14 @@ tcp::acceptor(io_context, tcp::endpoint(tcp::v4(), port))
 ```
 
 http 这个例子之所以这么写，主要是初始化 `acceptor_` 时，还拿不到 endpoint，否则可以直接用下面这个构造函数：
+
 ```cpp
 basic_socket_acceptor(boost::asio::io_context& io_context,
       const endpoint_type& endpoint, bool reuse_addr = true)
 ```
 
 这个构造函数注释说它等价于下面这段代码：
+
 ```cpp
 basic_socket_acceptor<Protocol> acceptor(io_context);
 acceptor.open(endpoint.protocol());
