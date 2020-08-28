@@ -101,12 +101,27 @@ int main(int argc, char* argv[]) {
     ssl_socket.set_verify_mode(ssl::verify_none);
 #endif  // SSL_VERIFY
 
+    // ssl::host_name_verification has been added since Boost 1.73 to replace
+    // ssl::rfc2818_verification.
+#if BOOST_VERSION < 107300
+
 #if VERBOSE_VERIFICATION
     ssl_socket.set_verify_callback(
-      MakeVerboseVerification(ssl::rfc2818_verification(host)));
+        MakeVerboseVerification(ssl::rfc2818_verification(host)));
 #else
     ssl_socket.set_verify_callback(ssl::rfc2818_verification(host));
 #endif  // VERBOSE_VERIFICATION
+
+#else
+
+#if VERBOSE_VERIFICATION
+    ssl_socket.set_verify_callback(
+        MakeVerboseVerification(ssl::host_name_verification(host)));
+#else
+    ssl_socket.set_verify_callback(ssl::host_name_verification(host));
+#endif  // VERBOSE_VERIFICATION
+
+#endif  // BOOST_VERSION < 107300
 
     ssl_socket.handshake(ssl::stream_base::client);
 

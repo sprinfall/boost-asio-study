@@ -191,7 +191,13 @@ bool Client::Handshake() {
   ssl_socket_.set_verify_mode(ssl::verify_none);
 #endif  // SSL_VERIFY
 
+  // ssl::host_name_verification has been added since Boost 1.73 to replace
+  // ssl::rfc2818_verification.
+#if BOOST_VERSION < 107300
   ssl_socket_.set_verify_callback(ssl::rfc2818_verification(host_));
+#else
+  ssl_socket_.set_verify_callback(ssl::host_name_verification(host_));
+#endif  // BOOST_VERSION < 107300
 
   // HandshakeHandler: void (boost::system::error_code)
   ssl_socket_.async_handshake(ssl::stream_base::client,
