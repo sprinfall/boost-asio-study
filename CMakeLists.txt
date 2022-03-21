@@ -36,7 +36,7 @@ endif()
 add_definitions(-DBOOST_ASIO_NO_DEPRECATED)
 
 if(WIN32)
-	# Asio needs this!
+    # Asio needs this!
     # 0x0601 means Win7. So our application targets Win7 and above.
     add_definitions(-D_WIN32_WINNT=0x0601)
 endif()
@@ -56,15 +56,15 @@ if(Boost_FOUND)
 endif()
 
 if(ENABLE_SSL)
-	# Commented on 20190605.
+    # Commented on 20190605.
     # The static libs have linkage issues with VS2015 on Win10.
     # set(OPENSSL_USE_STATIC_LIBS ON)
     # set(OPENSSL_MSVC_STATIC_RT ON)
-	find_package(OpenSSL)
-	if(OPENSSL_FOUND)
-		include_directories(${OPENSSL_INCLUDE_DIR})
-		message(STATUS "OpenSSL libs: " ${OPENSSL_LIBRARIES})
-	endif()
+    find_package(OpenSSL)
+    if(OPENSSL_FOUND)
+        include_directories(${OPENSSL_INCLUDE_DIR})
+        message(STATUS "OpenSSL libs: " ${OPENSSL_LIBRARIES})
+    endif()
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/src)

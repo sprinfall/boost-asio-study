@@ -11,26 +11,18 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 void Print(boost::system::error_code ec,
-           boost::asio::steady_timer* timer,
-           int* count) {
-  if (*count < 3) {
-    std::cout << *count << std::endl;
-    ++(*count);
+           boost::asio::steady_timer& timer,
+           int& count) {
+  if (count < 3) {
+    std::cout << count << std::endl;
+    ++count;
 
     // Change the timer's expiry time.
-    timer->expires_after(std::chrono::seconds(1));
+    timer.expires_after(std::chrono::seconds(1));
 
     // Start a new asynchronous wait.
-    timer->async_wait(std::bind(&Print, std::placeholders::_1, timer, count));
-
-    // The following 3 other ways using |boost::bind| also work:
-    //   timer->async_wait(boost::bind(&Print, boost::placeholders::_1, timer,
-    //                                 count));
-    //   timer->async_wait(boost::bind(&Print, boost::asio::placeholders::error,
-    //                                 timer, count));
-    //   timer->async_wait(boost::bind(Print, _1, timer, count));
-    // The 3rd way works because of "using namespace boost::placeholders;"
-    // declared in "boost/bind.hpp".
+    timer.async_wait(std::bind(&Print, std::placeholders::_1, std::ref(timer),
+                               std::ref(count)));
   }
 }
 
@@ -45,7 +37,8 @@ int main() {
   // signature |void(boost::system::error_code)|.
   // Binding the additional parameters converts your Print function into a
   // function object that matches the signature correctly.
-  timer.async_wait(std::bind(&Print, std::placeholders::_1, &timer, &count));
+  timer.async_wait(std::bind(&Print, std::placeholders::_1, std::ref(timer),
+                             std::ref(count)));
 
   io_context.run();
 

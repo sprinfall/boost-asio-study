@@ -14,13 +14,11 @@
 class Printer {
 public:
   explicit Printer(boost::asio::io_context& io_context)
-      : strand_(io_context),
-        timer1_(io_context, std::chrono::seconds(1)),
-        timer2_(io_context, std::chrono::seconds(1)) {
-    timer1_.async_wait(
-        boost::asio::bind_executor(strand_, std::bind(&Printer::Print1, this)));
-    timer2_.async_wait(
-        boost::asio::bind_executor(strand_, std::bind(&Printer::Print2, this)));
+      : strand_(boost::asio::make_strand(io_context)),
+        timer1_(strand_, std::chrono::seconds(1)),
+        timer2_(strand_, std::chrono::seconds(1)) {
+    timer1_.async_wait(std::bind(&Printer::Print1, this));
+    timer2_.async_wait(std::bind(&Printer::Print2, this));
   }
 
   ~Printer() {
@@ -33,8 +31,7 @@ public:
       ++count_;
 
       timer1_.expires_after(std::chrono::seconds(1));
-      timer1_.async_wait(boost::asio::bind_executor(
-          strand_, std::bind(&Printer::Print1, this)));
+      timer1_.async_wait(std::bind(&Printer::Print1, this));
     }
   } 
 
@@ -44,13 +41,13 @@ public:
       ++count_;
 
       timer2_.expires_after(std::chrono::seconds(1));
-      timer2_.async_wait(boost::asio::bind_executor(
-          strand_, std::bind(&Printer::Print2, this)));
+      timer2_.async_wait(std::bind(&Printer::Print2, this));
     }
   }
 
 private:
-  boost::asio::io_context::strand strand_;
+  // NOTE: `asio::strand` is a different class from `io_context::strand`.
+  boost::asio::strand<boost::asio::io_context::executor_type> strand_;
   boost::asio::steady_timer timer1_;
   boost::asio::steady_timer timer2_;
   int count_ = 0;

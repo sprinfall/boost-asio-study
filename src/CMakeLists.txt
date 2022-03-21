@@ -24,10 +24,13 @@ set(TARGETS
     timer6_args
     timer7_memfunc
     strand
+    strand2
     echo_server_sync
     echo_server_async
     echo_client_sync
     echo_client_async
+    
+    context_and_services
     )
 
 if(ENABLE_SSL)
